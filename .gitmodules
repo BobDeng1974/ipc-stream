@@ -1,0 +1,6 @@
+[submodule "third_party/paho"]
+	path = third_party/paho
+	url = https://github.com/eclipse/paho.mqtt.embedded-c 
+[submodule "third_party/ipcam_sdk"]
+	path = third_party/ipcam_sdk
+	url = https://github.com/pili-engineering/ipcam_sdk 
