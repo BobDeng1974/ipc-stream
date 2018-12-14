@@ -1,4 +1,4 @@
-// Last Update:2018-12-14 11:44:22
+// Last Update:2018-12-14 19:03:03
 /**
  * @file h264_decode.c
  * @brief 
@@ -8,29 +8,30 @@
  */
 
 #include <string.h>
+#include <arpa/inet.h>
+#include "dbg.h"
 #include "h264_decode.h"
 
 /*
  * the NAL start prefix code (it can also be 0x00000001, depends on the encoder implementation)
  * */
-#define NALU_START_CODE_4BYTES (0x01000000)
-#define NALU_START_CODE_3BYTES (0x010000)
+#define NALU_START_CODE (0x00000001)
 
-
-static int H264DecodeNalue( char *_pData, OUT NalUnit *_pNalu, int _nMax )
+static int H264DecodeNalue( char *_pData, int _nStartCodeLen, OUT NalUnit *_pNalus, int _nMax )
 {
     static char *pLast = NULL;
-    NalUnit *pLastNalu = _pNalu - 1;
     static int nIndex = 0;
+    NalUnit *pNalu = _pNalus + nIndex;
 
-    if ( !_pNalu ) {
+    if ( !_pNalus ) {
         return DECODE_PARARM_ERROR;
     }
 
-    _pNalu->addr = _pData;
-    _pNalu->type = (*_pData) & 0x1F;
-    if ( pLast && pLastNalu )
-        pLastNalu->size = _pData - pLast;
+    pNalu->addr = _pData;
+    pNalu->type = (*_pData) & 0x1F;
+    //LOGI("_pNalu->type = 0x%x\n", _pNalu->type );
+    if ( pLast && nIndex > 0 )
+        ( _pNalus + nIndex - 1)->size = _pData - pLast - _nStartCodeLen;
 
     pLast = _pData;
     nIndex ++;
@@ -51,36 +52,18 @@ int H264DecodeFrame( char *_pFrame, int _nLen, OUT NalUnit *_pNalus, int *_pSize
 
     while( pStart <= pEnd ) {
         pStartCode = (unsigned int *)pStart;
-        if ( *pStartCode == NALU_START_CODE_4BYTES ) {
+        if ( htonl(*pStartCode) == NALU_START_CODE ) {
             pStart += 4;// skip start code
-            ret = H264DecodeNalue( pStart, _pNalus, *_pSize );
+            ret = H264DecodeNalue( pStart, 4, _pNalus, *_pSize );
             if ( ret < 0 ) {
                 return DECODE_FRAME_FAIL;
             }
-        } else if ( *pStartCode == NALU_START_CODE_3BYTES ) {
+        } else if (( htonl(*pStartCode) >> 8 ) == NALU_START_CODE ) {
             pStart += 3;
-            ret = H264DecodeNalue( pStart, _pNalus, *_pSize );
+            ret = H264DecodeNalue( pStart, 3,  _pNalus, *_pSize );
             if ( ret < 0 ) {
                 return DECODE_FRAME_FAIL;
             }
-        } else if ( pStart[3] != 0x00 ) {
-            /*
-             *  ----------------------------------------------------------------
-             * | x1 | x2 | x3 | x4 ( not 0x00 & not 0x01 ) | x5 | x6 | x7 | ... |
-             *  ----------------------------------------------------------------
-             *
-             * if the 4th byte is not 0x00 and not 0x01, so
-             * 1. x2 x3 x4 x5
-             * 2. x3 x4 x5 x6
-             * 3. x4 x5 x6 x7
-             * this 3 case can not be 00 00 00 01 or 00 00 01, it expect the x4 must been 0x00
-             * so we can skip them
-             */
-            pStart += 4;
-        } else if ( pStart[2] != 0x00 ) {
-            pStart += 3;
-        } else if ( pStart[1] != 0x00 ) {
-            pStart += 2;
         } else {
             pStart += 1;
         }
