@@ -1,4 +1,4 @@
-// Last Update:2018-12-14 19:03:03
+// Last Update:2018-12-14 19:03:09
 /**
  * @file h264_decode.c
  * @brief 
@@ -29,7 +29,6 @@ static int H264DecodeNalue( char *_pData, int _nStartCodeLen, OUT NalUnit *_pNal
 
     pNalu->addr = _pData;
     pNalu->type = (*_pData) & 0x1F;
-    //LOGI("_pNalu->type = 0x%x\n", _pNalu->type );
     if ( pLast && nIndex > 0 )
         ( _pNalus + nIndex - 1)->size = _pData - pLast - _nStartCodeLen;
 
