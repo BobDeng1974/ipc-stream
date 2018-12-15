@@ -1,4 +1,4 @@
-// Last Update:2018-12-14 19:03:09
+// Last Update:2018-12-14 19:09:55
 /**
  * @file h264_decode.c
  * @brief 
@@ -64,7 +64,7 @@ int H264DecodeFrame( char *_pFrame, int _nLen, OUT NalUnit *_pNalus, int *_pSize
                 return DECODE_FRAME_FAIL;
             }
         } else {
-            pStart += 1;
+            pStart++;
         }
     }
 
