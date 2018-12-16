@@ -1,4 +1,4 @@
-// Last Update:2018-12-15 14:53:33
+// Last Update:2018-12-16 20:38:03
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -7,7 +7,11 @@
  * @date 2018-12-14
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include "dbg.h"
 #include "h264_decode.h"
+#include "rtmp_publish.h"
 
 #define MAX_NALUS_PER_FRAME 64
 
@@ -37,13 +41,13 @@ RtmpPubContext * RtmpNewContext( const char * _url, unsigned int _nTimeout,
     return ctx;
 }
 
-int RtmpSendVideo( RtmpPubContext *_pConext, const char *_pData,
+int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
                    unsigned int _nSize, int _nIsKey, unsigned int _nPresentationTime )
 {
     NalUnit nalus[MAX_NALUS_PER_FRAME], *pNalu = nalus;
     int ret = 0, i = 0;
     int size = MAX_NALUS_PER_FRAME;
-    char *pBuf = ( char *)malloc( _nSize ), pBufAddr = pBuf;
+    char *pBuf = ( char *)malloc( _nSize ), *pBufAddr = pBuf;
 
     if ( !_pConext || !_pData ) {
         return -1;
@@ -53,7 +57,7 @@ int RtmpSendVideo( RtmpPubContext *_pConext, const char *_pData,
         return -1;
     }
 
-    memset( pBuf, 0, _nLen );
+    memset( pBuf, 0, _nSize );
     memset( nalus, 0, sizeof(nalus) );
     ret = H264DecodeFrame( _pData, _nSize, nalus, &size );
     if ( ret != DECODE_OK ) {
@@ -113,7 +117,7 @@ err:
     return -1;
 }
 
-int RtmpSendAudio( RtmpPubContext, *_pConext, const char *_pData,
+int RtmpSendAudio( RtmpPubContext *_pConext, const char *_pData,
                    unsigned int _nSize, int _nPresentationTime )
 {
     return 0;

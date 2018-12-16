@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 17:43:25
+// Last Update:2018-12-16 20:41:28
 /**
  * @file adts_deocde_test.c
  * @brief 
@@ -7,6 +7,7 @@
  * @date 2018-12-16
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include "dbg.h"
 #include "unit_test.h"
@@ -18,6 +19,21 @@
 #define AAC_FILE_SIZE 895211
 #define MAX_ADTS_SIZE 64
 #define ADTS_HEADER_LEN 9
+#define MAX_BUF_LEN 1024
+
+static char gbuffer[ MAX_BUF_LEN ];
+
+static void DumpBuffer( char *_pBufName, char *_pBuf, int _nLen, int _nLine )
+{
+    unsigned char *pBuf = (unsigned char *)_pBuf;
+    int i = 0;
+
+    printf("[ %02d ] the buffer : %s is : \n", _nLine,  _pBufName );
+    for ( i=0; i<_nLen; i++ ) {
+        printf("0x%02x, ", pBuf[i] );
+    }
+    printf("\n");
+}
 
 char *AdtsDecodeNormalTest()
 {
@@ -34,20 +50,19 @@ char *AdtsDecodeNormalTest()
     ASSERT_NOT_EQUAL( fp, NULL ); 
     pBuf = ( char * ) malloc( AAC_BUFFER_MAX_SIZE );
     ASSERT_NOT_EQUAL( pBuf, NULL );
-    pBufAddr = pBuf;
     res = fread( pBuf, 1, AAC_BUFFER_MAX_SIZE, fp );
-    ASSERT_EQUAL( res, AAC_FILE_SIZE );
+    ASSERT_EQUAL( (int)res, AAC_FILE_SIZE );
     ret = AacDecodeAdts( pBuf, AAC_FILE_SIZE, adts, &size );
     ASSERT_EQUAL( ret, ADTS_DECODE_OK );
-    ASSERT_EQUAL( (int)size > 1, 1 );
-    LOGI("size = %\n", size );
+    ASSERT_EQUAL( (int)(size > 1), 1 );
+    LOGI("size = %d\n", size );
     ASSERT_EQUAL( (int)(pAdts->size > 0), 1 );
     ASSERT_EQUAL( pAdts->size, 51 );
     ASSERT_MEM_EQUAL( pAdts->addr, firstPktFirt4Bytes, 4 );
     pAdts++;
     ASSERT_EQUAL( (int)(pAdts->size > 0), 1 );
     ASSERT_EQUAL( pAdts->size, 259 );
-    ASSERT_MEM_EQUAL( pAdts->addr, firstPktFirt4Bytes, 4 );
+    ASSERT_MEM_EQUAL( pAdts->addr, SecondPktFirt4Bytes, 4 );
 
     free( pBuf );
     fclose( fp );
@@ -70,3 +85,4 @@ void AdtsDecodeTest()
         printf("[ AdtsDecodeTest ] test pass\n");
     }
 }
+

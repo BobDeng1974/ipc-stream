@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 17:22:12
+// Last Update:2018-12-16 19:39:02
 /**
  * @file adts_deocde_test.h
  * @brief 
@@ -10,7 +10,6 @@
 #ifndef ADTS_DEOCDE_TEST_H
 #define ADTS_DEOCDE_TEST_H
 
-
-extern char *AdtsDecodeNormalTest();
+extern void AdtsDecodeTest();
 
 #endif  /*ADTS_DEOCDE_TEST_H*/

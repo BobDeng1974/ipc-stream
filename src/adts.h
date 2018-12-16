@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 17:34:00
+// Last Update:2018-12-16 19:40:39
 /**
  * @file adts.h
  * @brief 
@@ -10,6 +10,12 @@
 #ifndef ADTS_H
 #define ADTS_H
 
+#undef IN
+#define IN const
+
+#undef OUT
+#define OUT
+
 typedef struct {
     char *addr;
     int size;
@@ -19,6 +25,6 @@ typedef struct {
 #define ADTS_PARAM_ERROR -1
 #define ADTS_OVERFLOW -2
 
-extern int AacDecodeAdts( IN char *_pFrame, int _nLen, OUT Adts *_pAdts, int *_pSize );
+extern int AacDecodeAdts( char *_pFrame, int _nLen, OUT Adts *_pAdts, int *_pSize );
 
 #endif  /*ADTS_H*/
