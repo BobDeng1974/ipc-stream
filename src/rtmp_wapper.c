@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 20:38:03
+// Last Update:2018-12-16 22:13:42
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -12,8 +12,10 @@
 #include "dbg.h"
 #include "h264_decode.h"
 #include "rtmp_publish.h"
+#include "adts.h"
 
 #define MAX_NALUS_PER_FRAME 64
+#define MAX_ADTS_PER_FRAME 128
 
 RtmpPubContext * RtmpNewContext( const char * _url, unsigned int _nTimeout,
                                  RtmpPubAudioType _nInputAudioType,
@@ -117,9 +119,60 @@ err:
     return -1;
 }
 
-int RtmpSendAudio( RtmpPubContext *_pConext, const char *_pData,
-                   unsigned int _nSize, int _nPresentationTime )
+int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
+                   unsigned int _nSize, unsigned int _nPresentationTime )
 {
+    static int nIsFirst = 1;
+    int ret = 0, nSize = MAX_ADTS_PER_FRAME, i = 0;
+    Adts adts[ MAX_ADTS_PER_FRAME ], *pAdts = adts;
+    char *pBuf = (char *) malloc ( _nSize ),  *pBufAddr = NULL;;
+
+    if ( !_pConext || !_pData || _nSize == 0 ) {
+        return -1;
+    }
+
+    if ( !pBuf ) {
+        return -1;
+    }
+
+    pBufAddr = pBuf;
+
+    if ( nIsFirst ) {
+        char audioSpecCfg[] = { 0x14, 0x10 };
+
+        RtmpPubSetAudioTimebase( _pConext, _nPresentationTime );
+        RtmpPubSetAac( _pConext, audioSpecCfg, sizeof(audioSpecCfg) );
+        nIsFirst = 0;
+    }
+    memset( adts, 0, sizeof(adts) );
+    ret = AacDecodeAdts( _pData, _nSize, adts, &nSize );
+    if ( ret != ADTS_DECODE_OK ) {
+        LOGI("adts decode fail, ret = %d\n", ret );
+        return -1;
+    }
+
+    if ( nSize <= 0 || nSize >= MAX_ADTS_PER_FRAME ) {
+        LOGI("check nSize error, nSize = %d\n", nSize );
+        return -1;
+    }
+
+    memset( pBuf, 0, _nSize );
+    for ( i=0; i<nSize; i++ ) {
+        if ( pAdts->addr && pAdts->size > 0 ) {
+            memcpy( pBuf, pAdts->addr, pAdts->size );
+            pBuf += pAdts->size;
+        } else {
+            LOGE("found invalid adts!!!\n");
+        }
+        pAdts++;
+    }
+
+    ret = RtmpPubSendAudioFrame( _pConext, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
+    if ( ret < 0 ) {
+        return -1;
+    }
+
+    free( pBufAddr );
     return 0;
 }
 
