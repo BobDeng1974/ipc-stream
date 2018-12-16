@@ -1,4 +1,4 @@
-// Last Update:2018-12-15 14:26:14
+// Last Update:2018-12-15 14:53:33
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -112,6 +112,13 @@ err:
     free( pBufAddr );
     return -1;
 }
+
+int RtmpSendAudio( RtmpPubContext, *_pConext, const char *_pData,
+                   unsigned int _nSize, int _nPresentationTime )
+{
+    return 0;
+}
+
 
 int RtmpConnect( RtmpPubContext * _pConext)
 {
