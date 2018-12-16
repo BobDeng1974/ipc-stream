@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 20:41:28
+// Last Update:2018-12-16 21:47:33
 /**
  * @file adts_deocde_test.c
  * @brief 
@@ -15,9 +15,9 @@
 #include "adts.c"
 
 #define AAC_FILE "../src/tests/media/h265_aac_1_16000_a.aac"
-#define AAC_BUFFER_MAX_SIZE 1024*100
+#define AAC_BUFFER_MAX_SIZE 1024*1000
 #define AAC_FILE_SIZE 895211
-#define MAX_ADTS_SIZE 64
+#define MAX_ADTS_SIZE 2048
 #define ADTS_HEADER_LEN 9
 #define MAX_BUF_LEN 1024
 
@@ -43,8 +43,8 @@ char *AdtsDecodeNormalTest()
     int ret = 0;
     Adts adts[MAX_ADTS_SIZE], *pAdts = adts;
     int size = MAX_ADTS_SIZE;
-    char firstPktFirt4Bytes[] = { 0x00, 0x4c, 0x61, 0x76 };
-    char SecondPktFirt4Bytes[] = { 0x48, 0x33, 0x0f, 0x4d };
+    char firstPktFirt4Bytes[] = { 0xde, 0x04, 0x00, 0x4c };
+    char SecondPktFirt4Bytes[] = { 0x01, 0x24, 0x9e, 0xda };
 
     memset( adts, 0, sizeof(adts) );
     ASSERT_NOT_EQUAL( fp, NULL ); 
@@ -53,15 +53,16 @@ char *AdtsDecodeNormalTest()
     res = fread( pBuf, 1, AAC_BUFFER_MAX_SIZE, fp );
     ASSERT_EQUAL( (int)res, AAC_FILE_SIZE );
     ret = AacDecodeAdts( pBuf, AAC_FILE_SIZE, adts, &size );
+    LOGI("size = %d\n", size );
     ASSERT_EQUAL( ret, ADTS_DECODE_OK );
     ASSERT_EQUAL( (int)(size > 1), 1 );
     LOGI("size = %d\n", size );
     ASSERT_EQUAL( (int)(pAdts->size > 0), 1 );
-    ASSERT_EQUAL( pAdts->size, 51 );
+    ASSERT_EQUAL( pAdts->size, 560 );
     ASSERT_MEM_EQUAL( pAdts->addr, firstPktFirt4Bytes, 4 );
     pAdts++;
     ASSERT_EQUAL( (int)(pAdts->size > 0), 1 );
-    ASSERT_EQUAL( pAdts->size, 259 );
+    ASSERT_EQUAL( pAdts->size, 424 );
     ASSERT_MEM_EQUAL( pAdts->addr, SecondPktFirt4Bytes, 4 );
 
     free( pBuf );

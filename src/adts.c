@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 19:44:19
+// Last Update:2018-12-16 21:40:56
 /**
  * @file adts.c
  * @brief 
@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include "dbg.h"
 #include "adts.h"
 
 #define ADTS_SYNCWORKD 0xFFF
@@ -26,15 +27,18 @@ int AacDecodeAdts( char *_pFrame, int _nLen, OUT Adts *_pAdts, int *_pSize )
 
     while( pStart < pEnd ) {
         pSyncWord = (unsigned int *)pStart;
-        if ( ( htonl(*pSyncWord) >> 8 ) == ADTS_SYNCWORKD ) {
+        if ( ( (htonl(*pSyncWord) >> 20) & 0xFFF ) == ADTS_SYNCWORKD ) {
+            nAacFrameLen = 0;
             nAacFrameLen |= (pStart[3] & 0x3) << 11;
             nAacFrameLen |= pStart[4] << 3;
             nAacFrameLen |= (pStart[5] & 0xe0) >> 5;
             nHeaderLen = (pStart[1] & 0x1) == 1 ? 7 : 9; // check whether there is crc
             _pAdts->size = nAacFrameLen;
             _pAdts->addr = pStart + nHeaderLen;
+            pStart +=  _pAdts->size;
             _pAdts++;
             if ( _pAdts - pAdtsAddr >= *_pSize ) {
+                *_pSize = _pAdts - pAdtsAddr;
                 return ADTS_OVERFLOW;
             }
         }
