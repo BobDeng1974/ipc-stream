@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 21:40:56
+// Last Update:2018-12-17 19:11:40
 /**
  * @file adts.c
  * @brief 
@@ -33,9 +33,9 @@ int AacDecodeAdts( char *_pFrame, int _nLen, OUT Adts *_pAdts, int *_pSize )
             nAacFrameLen |= pStart[4] << 3;
             nAacFrameLen |= (pStart[5] & 0xe0) >> 5;
             nHeaderLen = (pStart[1] & 0x1) == 1 ? 7 : 9; // check whether there is crc
-            _pAdts->size = nAacFrameLen;
+            _pAdts->size = nAacFrameLen - nHeaderLen;// nAacFrameLen = headerlen + aacDataLen 
             _pAdts->addr = pStart + nHeaderLen;
-            pStart +=  _pAdts->size;
+            pStart += nAacFrameLen;
             _pAdts++;
             if ( _pAdts - pAdtsAddr >= *_pSize ) {
                 *_pSize = _pAdts - pAdtsAddr;
