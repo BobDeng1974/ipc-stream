@@ -1,4 +1,4 @@
-// Last Update:2018-12-14 19:42:33
+// Last Update:2018-12-17 16:49:21
 /**
  * @file h264_decode_test.c
  * @brief 
@@ -89,8 +89,9 @@ static char *H264DecodeNormalTest()
             foundSEI = 1;
             break;
         case NALU_TYPE_IDR:
-            LOGI("get NALU_TYPE_IDR\n");
+            LOGI("get NALU_TYPE_IDR,pNalues->size = %d\n", pNalues->size );
             foundIDR = 1;
+            ASSERT_EQUAL( (int)(pNalues->size > 0), 1 );
             ASSERT_MEM_EQUAL( keyFrameIDRfirst4Bytes, pNalues->addr, 4 );
             break;
         default:

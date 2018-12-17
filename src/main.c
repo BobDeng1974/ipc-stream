@@ -1,4 +1,4 @@
-// Last Update:2018-12-11 21:05:41
+// Last Update:2018-12-17 18:47:46
 /**
  * @file main.c
  * @brief 
@@ -8,82 +8,94 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
-#include <sys/timeb.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "dbg.h"
-#include "MQTTLinux.h"
-#include "MQTTClient.h"
+#include "dev_core.h"
+#include "rtmp_wapper.h"
 
-#define LOGA_DEBUG 0
-#define LOGA_INFO 1
-#define assert(a, b, c, d) myassert(__FILE__, __LINE__, a, b, c, d)
+typedef struct {
+    char *pUrl;
+    int nTimeout;
+    int nInputAudioType;
+    int nOutputAudioType;
+    int nTimePolic;
+    RtmpPubContext *pContext;
+    pthread_mutex_t mutex;
+} app_t;
 
-void MyLog(int LOGA_level, char* format, ...)
+static app_t app = 
 {
-    static char msg_buf[256];
-    va_list args;
-    struct timeb ts;
+    .pUrl = "rtmp://pili-publish.caster.test.cloudvdn.com/caster-test/test18",
+    .nTimeout = 10,
+    .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
+    .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
+    .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
+};
 
-    struct tm *timeinfo;
+int VideoFrameCallBack ( char *_pFrame, 
+                   int _nLen, int _nIskey, double _dTimeStamp, 
+                   unsigned long _nFrameIndex, unsigned long _nKeyFrameIndex, 
+                   int streamno )
+{
+    int ret = 0;
 
-    ftime(&ts);
-    timeinfo = localtime(&ts.time);
-    strftime(msg_buf, 80, "%Y%m%d %H%M%S", timeinfo);
+    pthread_mutex_lock( &app.mutex );
+    ret = RtmpSendVideo( app.pContext, _pFrame, _nLen, _nIskey, (unsigned int) _dTimeStamp );
+    if ( ret < 0 ) {
+        LOGE("RtmpSendVideo error\n");
+    }
+    pthread_mutex_unlock( &app.mutex );
 
-    sprintf(&msg_buf[strlen(msg_buf)], ".%.3hu ", ts.millitm);
-
-    va_start(args, format);
-    vsnprintf(&msg_buf[strlen(msg_buf)], sizeof(msg_buf) - strlen(msg_buf), format, args);
-    va_end(args);
-
-    printf("%s\n", msg_buf);
-    fflush(stdout);
+    return 0;
 }
 
-void myassert(char* filename, int lineno, char* description, int value, char* format, ...)
+int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
+                     unsigned long _nFrameIndex, int streamno )
 {
-    if (!value)
-    {
-        va_list args;
+    int ret = 0;
 
-        MyLog(LOGA_INFO, "Assertion failed, file %s, line %d, description: %s\n", filename, lineno, description);
-
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
+    pthread_mutex_lock( &app.mutex );
+    ret = RtmpSendAudio( app.pContext, _pFrame, _nLen, (unsigned int) _dTimeStamp );
+    if ( ret < 0 ) {
+        LOGE("RtmpSendAudio error\n");
     }
-    else
-        MyLog(LOGA_DEBUG, "Assertion succeeded, file %s, line %d, description: %s", filename, lineno, description);
+    pthread_mutex_unlock( &app.mutex );
+    return 0;
 }
 
 int main()
 {
-    char *host = "loalhost";
-    int port = 8090, rc = 0;
-    Network n;
-    MQTTClient c;
-    MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
-    unsigned char buf[100];
-    unsigned char readbuf[100];
+    CoreDevice *pDev = NewCoreDevice();
+    int ret = 0;
 
-    NetworkInit(&n);
-    NetworkConnect( &n, host, port );
-    MQTTClientInit(&c, &n, 1000, buf, 100, readbuf, 100);
-    data.willFlag = 1;
-    data.MQTTVersion = 4;
-    data.clientID.cstring = "single-threaded-test";
-    data.username.cstring = "testuser";
-    data.password.cstring = "testpassword";
-    data.keepAliveInterval = 20;
-    data.cleansession = 1;
-    data.will.message.cstring = "will message";
-    data.will.qos = 1;
-    data.will.retained = 0;
-    data.will.topicName.cstring = "will topic";
-    MyLog(LOGA_DEBUG, "Connecting");
-    rc = MQTTConnect(&c, &data);
-    assert("Good rc from connect", rc == SUCCESS, "rc was %d", rc);
+    if ( !pDev ) {
+        LOGE("NewCoreDevice() error\n");
+        return 0;
+    }
+
+    pthread_mutex_init( &app.mutex, NULL );
+    app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
+                                   app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
+    if ( !app.pContext ) {
+        LOGE("RtmpNewContext() error\n");
+        return 0;
+    }
+
+    ret = RtmpConnect( app.pContext );
+    if ( ret < 0 ) {
+        LOGE("RtmpConnect error\n");
+        return 0;
+    }
+
+    pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
+    pDev->startStream( STREAM_MAIN );
+
+    for (;;) {
+        LOGI("heart beat...\n");
+        sleep( 6 );
+    }
 
     return 0;
 }
+

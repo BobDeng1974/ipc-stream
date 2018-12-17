@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 22:13:42
+// Last Update:2018-12-17 18:15:02
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "dbg.h"
 #include "h264_decode.h"
 #include "rtmp_publish.h"
@@ -29,7 +30,7 @@ RtmpPubContext * RtmpNewContext( const char * _url, unsigned int _nTimeout,
         return NULL;
     }
 
-    ctx = RtmpNewContext( _url, _nTimeout, _nInputAudioType, _nOutputAudioType, _nTimePolic );
+    ctx = RtmpPubNew( _url, _nTimeout, _nInputAudioType, _nOutputAudioType, _nTimePolic );
     if ( !ctx ) {
         return NULL;
     }
@@ -50,12 +51,18 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
     int ret = 0, i = 0;
     int size = MAX_NALUS_PER_FRAME;
     char *pBuf = ( char *)malloc( _nSize ), *pBufAddr = pBuf;
+    static int nIsFirst = 1;
 
     if ( !_pConext || !_pData ) {
+        LOGE("check param error\n");
+        if ( pBuf ) {
+            free( pBuf );
+        }
         return -1;
     }
 
     if ( !pBuf ) {
+        LOGE("malloc error\n");
         return -1;
     }
 
@@ -63,52 +70,68 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
     memset( nalus, 0, sizeof(nalus) );
     ret = H264DecodeFrame( _pData, _nSize, nalus, &size );
     if ( ret != DECODE_OK ) {
+        LOGE("H264DecodeFrame error, ret = %d\n", ret );
         goto err;
     }
+
+    if ( size < 0 ) {
+        LOGE("check size error\n");
+        return -1;
+    }
+
     for ( i=0; i<size; i++ ) {
         switch( pNalu->type ) {
         case NALU_TYPE_SPS:
-            if ( pNalu->addr && pNalu->size > 0 ) {
+            if ( pNalu->addr && pNalu->size > 0 && nIsFirst ) {
+                LOGI("set sps\n");
                 RtmpPubSetVideoTimebase( _pConext, _nPresentationTime );
                 RtmpPubSetSps( _pConext, pNalu->addr, pNalu->size );
             } else {
-                LOGE("get sps error\n");
-                goto err;
+                //LOGE("get sps error\n");
+                //goto err;
             }
             break;
         case NALU_TYPE_PPS:
-            if ( pNalu->addr && pNalu->size > 0 ) {
+            if ( pNalu->addr && pNalu->size > 0 && nIsFirst ) {
+                LOGI("set pps\n");
                 RtmpPubSetPps( _pConext, pNalu->addr, pNalu->size );
+                nIsFirst = 0;
             } else {
-                LOGE("get sps error\n");
-                goto err;
+                //LOGE("get sps error\n");
+                //goto err;
             }
             break;
         case NALU_TYPE_IDR:
         case NALU_TYPE_SLICE:
+            //LOGI("pNalu->type = %d\n", pNalu->type );
             if ( pNalu->addr && pNalu->size > 0 ) {
                 memcpy( pBuf, pNalu->addr, pNalu->size );
+                pBuf += pNalu->size;
             } else {
-                LOGE("get nalu error\n");
+                LOGE("get nalu error, pNalu->addr = %p, pNalu->size = %d\n", pNalu->addr, pNalu->size );
             }
             break;
         default:
             break;
         }
+        pNalu++;
     }
 
     if ( size >= MAX_NALUS_PER_FRAME ) {
         LOGE("nalus over flow\n");
     }
 
+    //LOGI("pBuf - pBufAddr = %ld\n", pBuf - pBufAddr);
     if ( _nIsKey ) {
         ret = RtmpPubSendVideoKeyframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
+            LOGE("RtmpPubSendVideoKeyframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
         }
     } else {
         ret = RtmpPubSendVideoInterframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
+            LOGE("RtmpPubSendVideoInterframe() error, ret = %d\n", ret );
             goto err;
         }
     }
@@ -128,10 +151,15 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
     char *pBuf = (char *) malloc ( _nSize ),  *pBufAddr = NULL;;
 
     if ( !_pConext || !_pData || _nSize == 0 ) {
+        if ( pBuf ) {
+            LOGE("check param error\n");
+            free( pBuf );
+        }
         return -1;
     }
 
     if ( !pBuf ) {
+        LOGE("malloc error\n");
         return -1;
     }
 
@@ -167,8 +195,10 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
         pAdts++;
     }
 
+//    LOGI("pBuf - pBufAddr = %ld\n", pBuf - pBufAddr);
     ret = RtmpPubSendAudioFrame( _pConext, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
     if ( ret < 0 ) {
+        LOGE("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
         return -1;
     }
 
