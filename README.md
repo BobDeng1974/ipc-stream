@@ -24,8 +24,8 @@ git submodule update --init --recursive
 ## sdk核心API
 #### 推流
 - RtmpNewContext,新建推流上下文
-- RtmpSendVideo,发送视频数据
-- RtmpSendAudio,发送音频数据
+- RtmpSendVideo,发送视频数据(非线程安全，使用时需要加锁)
+- RtmpSendAudio,发送音频数据（非现成安全，使用时需要加锁）
 - RtmpConnect,连接RTMP服务器
 
 #### 信令
