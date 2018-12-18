@@ -11,9 +11,16 @@
 ## 编译
 git submodule update --init --recursive
 
+#### X86
 - mkdir build
 - cd build
 - cmake ..
+- make
+
+#### ARM
+- mkdir build-arm
+- cd build-arm
+- cmake .. -DARM=yes
 - make
 
 ## demo概述
