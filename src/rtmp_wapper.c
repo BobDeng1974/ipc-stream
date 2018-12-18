@@ -1,4 +1,4 @@
-// Last Update:2018-12-17 19:07:47
+// Last Update:2018-12-18 09:31:09
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -76,7 +76,7 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
 
     if ( size < 0 ) {
         LOGE("check size error\n");
-        return -1;
+        goto err;
     }
 
     for ( i=0; i<size; i++ ) {
@@ -131,7 +131,7 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
     } else {
         ret = RtmpPubSendVideoInterframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
-            LOGE("RtmpPubSendVideoInterframe() error, ret = %d\n", ret );
+            LOGE("RtmpPubSendVideoInterframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
         }
     }

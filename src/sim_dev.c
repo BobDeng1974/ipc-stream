@@ -1,4 +1,4 @@
-// Last Update:2018-12-11 12:46:03
+// Last Update:2018-12-18 15:35:44
 /**
  * @file sim_dev.c
  * @brief 
@@ -511,12 +511,12 @@ void simdev_set_video_format(int camera, int stream, int isH265)
 
 char *GetH264File()
 {
-    return "./len.h264";
+    return "../src/tests/media/len.h264";
 }
 
 char *GetAacFile()
 {
-    return "./h265_aac_1_16000_a.aac";
+    return "../src/tests/media/h265_aac_1_16000_a.aac";
 }
 
 int simdev_init( )

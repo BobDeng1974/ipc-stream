@@ -1,4 +1,4 @@
-// Last Update:2018-12-17 19:27:52
+// Last Update:2018-12-18 17:54:17
 /**
  * @file main.c
  * @brief 
@@ -10,9 +10,16 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include "dbg.h"
 #include "dev_core.h"
 #include "rtmp_wapper.h"
+#include "sig_ctl.h"
+
+typedef struct {
+    char *pSignal;
+    int nSignal;
+} MqttSignal;
 
 typedef struct {
     char *pUrl;
@@ -20,9 +27,37 @@ typedef struct {
     int nInputAudioType;
     int nOutputAudioType;
     int nTimePolic;
+    char *pClientId;
+    enum QoS nQos;
+    char *pUserName;
+    char *pPasswd;
+    char *pTopic;
+    char *pHost;
+    int nPort;
+    MqttContex *pMqttContex;
     RtmpPubContext *pContext;
     pthread_mutex_t mutex;
+    CoreDevice *pDev;
 } app_t;
+
+#define ITEM_LIST \
+    ADD_SIGNAL_ITEM( pushLiveStart ) \
+    ADD_SIGNAL_ITEM( pushLiveStop )
+
+#define ADD_SIGNAL_ITEM( item ) item,
+
+enum {
+   ITEM_LIST 
+};
+
+#undef ADD_SIGNAL_ITEM
+#define ADD_SIGNAL_ITEM( item ) { #item, item },
+#define ARRSZ(arr) (sizeof(arr)/sizeof(arr[0]))
+
+static MqttSignal gSignalList[] = 
+{
+    ITEM_LIST
+};
 
 static app_t app = 
 {
@@ -31,7 +66,28 @@ static app_t app =
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
+    .pClientId = "ipc-rtmp-mqtt-10",
+    .nQos = 2,
+    .pUserName = NULL,
+    .pPasswd = NULL,
+    .pTopic = "pushLive",
+    .pHost = "emqx.qnservice.com",
+    .nPort = 1883,
 };
+
+int GetMqttSignal( char *pMqttSignal )
+{
+    int i = 0;
+
+    for ( i=0; i<ARRSZ(gSignalList); i++ ) {
+        if ( strncmp( gSignalList[i].pSignal, pMqttSignal,
+                      strlen(gSignalList[i].pSignal) ) == 0 ) {
+            return gSignalList[i].nSignal;
+        }
+    }
+
+    return -1;
+}
 
 int VideoFrameCallBack ( char *_pFrame, 
                    int _nLen, int _nIskey, double _dTimeStamp, 
@@ -64,13 +120,54 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     return 0;
 }
 
+static void MqttMessageCallback( char *_pMessage, int nLen )
+{
+    int nSignal = 0;
+
+    if ( _pMessage ) {
+        LOGI("get message %s\n", _pMessage );
+        nSignal = GetMqttSignal( _pMessage );
+        if ( nSignal == -1 ) {
+            LOGE("signal %s not found\n", _pMessage );
+            return;
+        }
+
+        switch( nSignal ) {
+        case pushLiveStart:
+            if ( app.pDev ) {
+                char *pSend = "pushSucceed";
+
+                LOGI("get signal pushLiveStart, start to push rtmp stream\n");
+                app.pDev->startStream( STREAM_MAIN );
+                MqttSend( app.pMqttContex, pSend, strlen(pSend) );
+            }
+            break;
+        case pushLiveStop:
+            if ( app.pDev ) {
+                LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
+                app.pDev->stopStream();
+            }
+            break;
+        default:
+            break;
+        }
+    }
+}
+
 int main()
 {
-    CoreDevice *pDev = NewCoreDevice();
     int ret = 0;
 
-    if ( !pDev ) {
+    app.pDev = NewCoreDevice();
+    if ( !app.pDev ) {
         LOGE("NewCoreDevice() error\n");
+        return 0;
+    }
+
+    app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
+                                     app.pTopic, app.pHost, app.nPort, MqttMessageCallback ) ;
+    if ( !app.pMqttContex ) {
+        LOGE("MqttNewContex error\n");
         return 0;
     }
 
@@ -88,12 +185,11 @@ int main()
         return 0;
     }
 
-    pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
-    pDev->startStream( STREAM_MAIN );
+    app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
         LOGI("heart beat...\n");
-        sleep( 6 );
+        MqttYield( app.pMqttContex, 1000 );
     }
 
     return 0;

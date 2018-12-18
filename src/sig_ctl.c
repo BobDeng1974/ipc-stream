@@ -1,4 +1,4 @@
-// Last Update:2018-12-17 11:39:34
+// Last Update:2018-12-18 17:49:39
 /**
  * @file sig_ctl.c
  * @brief 
@@ -10,78 +10,122 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include "dbg.h"
-#include "MQTTLinux.h"
-#include "MQTTClient.h"
+#include "sig_ctl.h"
 
-#define LOGA_DEBUG 0
-#define LOGA_INFO 1
-#define assert(a, b, c, d) myassert(__FILE__, __LINE__, a, b, c, d)
+static MqttMessageCb pMessageCb;
 
-void MyLog(int LOGA_level, char* format, ...)
+void MessageArrived( MessageData* _pMessage )
 {
-    static char msg_buf[256];
-    va_list args;
-    struct timeb ts;
+    MQTTMessage* pMessage = _pMessage->message;
 
-    struct tm *timeinfo;
-
-    ftime(&ts);
-    timeinfo = localtime(&ts.time);
-    strftime(msg_buf, 80, "%Y%m%d %H%M%S", timeinfo);
-
-    sprintf(&msg_buf[strlen(msg_buf)], ".%.3hu ", ts.millitm);
-
-    va_start(args, format);
-    vsnprintf(&msg_buf[strlen(msg_buf)], sizeof(msg_buf) - strlen(msg_buf), format, args);
-    va_end(args);
-
-    printf("%s\n", msg_buf);
-    fflush(stdout);
-}
-
-void myassert(char* filename, int lineno, char* description, int value, char* format, ...)
-{
-    if (!value)
-    {
-        va_list args;
-
-        MyLog(LOGA_INFO, "Assertion failed, file %s, line %d, description: %s\n", filename, lineno, description);
-
-        va_start(args, format);
-        vprintf(format, args);
-        va_end(args);
+    if ( pMessage ) {
+        LOGI("%d.%s\n", _pMessage->topicName->lenstring.len, _pMessage->topicName->lenstring.data );
+        if ( pMessageCb ) {
+            pMessageCb( (char*)pMessage->payload, (int)pMessage->payloadlen );
+        } else {
+            LOGE("pMessageCb is NULL\n");
+        }
+    } else {
+        LOGE("get empty message\n");
     }
-    else
-        MyLog(LOGA_DEBUG, "Assertion succeeded, file %s, line %d, description: %s", filename, lineno, description);
 }
 
-int MqttSignal()
+MqttContex * MqttNewContex( char *_pClientId, enum QoS _nQos, char *_pUserName,
+                            char *_pPasswd, char *_pTopic, char *_pHost, int _nPort, MqttMessageCb _pCb )
 {
-    char *host = "loalhost";
-    int port = 8090, rc = 0;
-    Network n;
-    MQTTClient c;
+    int rc = 0;
+    MqttContex *pContex = NULL;
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
-    unsigned char buf[100];
-    unsigned char readbuf[100];
 
-    NetworkInit(&n);
-    NetworkConnect( &n, host, port );
-    MQTTClientInit(&c, &n, 1000, buf, 100, readbuf, 100);
-    data.willFlag = 1;
-    data.MQTTVersion = 4;
-    data.clientID.cstring = "single-threaded-test";
-    data.username.cstring = "testuser";
-    data.password.cstring = "testpassword";
-    data.keepAliveInterval = 20;
+    if ( !_pClientId ||  !_pHost || !_pCb ) {
+        LOGE("check param error\n");
+        return NULL;
+    }
+
+    pContex = (MqttContex *) malloc ( sizeof(MqttContex) );
+    if ( !pContex ) {
+        LOGE("malloc error\n");
+        return NULL;
+    }
+
+    pContex->pSendBuf = ( unsigned char *) malloc ( 128 );
+    if ( !pContex->pSendBuf ) {
+        LOGE("malloc error\n");
+        free( pContex );
+        return NULL;
+    }
+
+    pContex->pReadBuf = ( unsigned char *) malloc ( 128 );
+    if ( !pContex->pReadBuf ) {
+        LOGE("malloc error\n");
+        free( pContex );
+        return NULL;
+    }
+
+    pContex->pTopic = _pTopic;
+
+    pMessageCb = _pCb;
+    NetworkInit( &pContex->n );
+    NetworkConnect( &pContex->n, _pHost, _nPort );
+    MQTTClientInit( &pContex->c, &pContex->n, 1000, pContex->pSendBuf, 128, pContex->pReadBuf, 128 );
+
+    data.willFlag = 0;
+    data.MQTTVersion = 3;
+    data.clientID.cstring = _pClientId;
+    data.username.cstring = _pUserName;
+    data.password.cstring = _pPasswd;
+    data.keepAliveInterval = 10;
     data.cleansession = 1;
-    data.will.message.cstring = "will message";
-    data.will.qos = 1;
-    data.will.retained = 0;
-    data.will.topicName.cstring = "will topic";
-    MyLog(LOGA_DEBUG, "Connecting");
-    rc = MQTTConnect(&c, &data);
-    assert("Good rc from connect", rc == SUCCESS, "rc was %d", rc);
+    rc = MQTTConnect( &pContex->c, &data );
+    LOGI("rc = %d\n", rc );
+    LOGI("Subscribing to %s\n", _pTopic );
+    rc = MQTTSubscribe( &pContex->c, _pTopic, _nQos, MessageArrived );
+    LOGI("rc = %d\n", rc );
+
+    return pContex;
+}
+
+void MqttDestroyContex( MqttContex *_pConext )
+{
+    if ( _pConext ) {
+        MQTTDisconnect( &_pConext->c );
+        NetworkDisconnect( &_pConext->n );
+        free( _pConext->pSendBuf );
+        free( _pConext->pReadBuf );
+        free( _pConext );
+    }
+}
+
+int MqttYield( MqttContex *_pConext, int nTimeOut )
+{
+    if ( _pConext ) {
+        return ( MQTTYield( &(_pConext->c), nTimeOut) );
+    }
+
+    return -1;
+}
+
+int MqttSend( MqttContex *_pConext, char *_pMessage, int _nLen )
+{
+    MQTTMessage message;
+    int rc = 0;
+
+    if ( !_pConext || !_pMessage || _nLen <= 0 ) {
+        LOGE("check param error\n");
+        return -1;
+    }
+
+    message.qos = 1;
+    message.retained = 0;
+    message.payload = _pMessage;;
+    message.payloadlen = _nLen;
+    rc = MQTTPublish( &(_pConext->c), _pConext->pTopic, &message ); 
+    if ( rc != 0 ) {
+        LOGE("MQTTPublish() error, rc = %d\n", rc );
+        return -1;
+    }
 
     return 0;
 }
+
+
