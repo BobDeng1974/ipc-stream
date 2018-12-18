@@ -9,5 +9,3 @@ git submodule update --init --recursive
 - cmake ..
 - make
 
-### ipcam
-make CROSS_COMPILE= CRYPTO= SHARED=
