@@ -4,6 +4,9 @@
 - [x] 支持H.264 视频帧
 - [x] 支持AAC/G.711A/G711U 音频帧
 - [x] 支持mqtt信令
+- [x] 低内存占用
+- [x] 支持 PCM 16bit 音频数据编码
+- [x] sdk内部解码nalu和adts
 
 ## 编译
 git submodule update --init --recursive
