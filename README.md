@@ -14,6 +14,11 @@ git submodule update --init --recursive
 - cmake ..
 - make
 
+## demo概述
+- 使用mqtt主题为"pushLive"
+- 收到信令"pushLiveStart"开始推流，此时需要发送信令"pushSucceed"给客户端
+- 收到信令"pushLiveStop"停止推流
+
 ## sdk核心API
 #### 推流
 - RtmpNewContext,新建推流上下文
