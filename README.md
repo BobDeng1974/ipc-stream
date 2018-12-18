@@ -1,10 +1,10 @@
 # ipc-stream
 Controllable rtmp stream
 旨在为嵌入式摄像头提供 可控的rtmp 推流功能，功能特性如下
-- [ x ] 支持RTMP推流
-- [ x ] 支持H.264 视频帧
-- [ x ] 支持AAC/G.711A/G711U 音频帧
-- [ x ] 支持mqtt信令
+- [x] 支持RTMP推流
+- [x] 支持H.264 视频帧
+- [x] 支持AAC/G.711A/G711U 音频帧
+- [x] 支持mqtt信令
 
 ## 编译
 git submodule update --init --recursive
