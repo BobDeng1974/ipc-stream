@@ -195,7 +195,8 @@ CaptureDevice gIpcCaptureDev =
     AjIsAudioEnable,
     AjRegisterAlarmCb,
     NULL,
-    AjCaptureJpeg
+    AjCaptureJpeg,
+    AjStopStream
 };
 
 void __attribute__((constructor)) IpcDevRegistrerToCore()

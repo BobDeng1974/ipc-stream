@@ -139,7 +139,7 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.pDev->startStream( STREAM_MAIN );
-                //MqttSend( app.pMqttContex, pSend, strlen(pSend) );
+                MqttSend( app.pMqttContex, pSend, strlen(pSend) );
             }
             break;
         case pushLiveStop:
