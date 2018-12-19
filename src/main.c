@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 17:54:17
+// Last Update:2018-12-19 10:10:51
 /**
  * @file main.c
  * @brief 
@@ -139,7 +139,7 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.pDev->startStream( STREAM_MAIN );
-                MqttSend( app.pMqttContex, pSend, strlen(pSend) );
+                //MqttSend( app.pMqttContex, pSend, strlen(pSend) );
             }
             break;
         case pushLiveStop:
@@ -188,8 +188,14 @@ int main()
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
-        LOGI("heart beat...\n");
+        static int i = 0;
+
+        if ( i == 100 ) {
+            LOGI("heart beat...\n");
+            i = 0;
+        }
         MqttYield( app.pMqttContex, 1000 );
+        i++;
     }
 
     return 0;

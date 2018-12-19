@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 17:49:39
+// Last Update:2018-12-19 11:28:24
 /**
  * @file sig_ctl.c
  * @brief 
@@ -55,19 +55,20 @@ MqttContex * MqttNewContex( char *_pClientId, enum QoS _nQos, char *_pUserName,
         return NULL;
     }
 
+    memset( pContex->pSendBuf, 0, 128 );
     pContex->pReadBuf = ( unsigned char *) malloc ( 128 );
     if ( !pContex->pReadBuf ) {
         LOGE("malloc error\n");
         free( pContex );
         return NULL;
     }
-
+    memset( pContex->pReadBuf, 0, 128 );
     pContex->pTopic = _pTopic;
 
     pMessageCb = _pCb;
     NetworkInit( &pContex->n );
     NetworkConnect( &pContex->n, _pHost, _nPort );
-    MQTTClientInit( &pContex->c, &pContex->n, 1000, pContex->pSendBuf, 128, pContex->pReadBuf, 128 );
+    MQTTClientInit( &pContex->c, &pContex->n, 2000, pContex->pSendBuf, 128, pContex->pReadBuf, 128 );
 
     data.willFlag = 0;
     data.MQTTVersion = 3;

@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 21:01:04
+// Last Update:2018-12-19 09:59:39
 /**
  * @file ipc_dev.c
  * @brief 
@@ -169,6 +169,13 @@ static int AjCaptureJpeg( int stream, int quality, char *path, char *filename)
 
     ret = dev_sdk_set_SnapJpegFile( stream, quality, path, filename );
     printf("%s %s %d ret = %d\n", __FILE__, __FUNCTION__, __LINE__, ret );
+    return 0;
+}
+
+static int AjStopStream()
+{
+    dev_sdk_stop_video(0, 0);
+    dev_sdk_stop_audio(0, 0);
     return 0;
 }
 
