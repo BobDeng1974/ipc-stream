@@ -1,4 +1,4 @@
-// Last Update:2018-12-19 10:10:51
+// Last Update:2018-12-21 11:00:59
 /**
  * @file main.c
  * @brief 
@@ -42,7 +42,8 @@ typedef struct {
 
 #define ITEM_LIST \
     ADD_SIGNAL_ITEM( pushLiveStart ) \
-    ADD_SIGNAL_ITEM( pushLiveStop )
+    ADD_SIGNAL_ITEM( pushLiveStop ) \
+    ADD_SIGNAL_ITEM( pushSucceed )
 
 #define ADD_SIGNAL_ITEM( item ) item,
 
@@ -147,6 +148,9 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
                 LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
                 app.pDev->stopStream();
             }
+            break;
+        case pushSucceed:
+            LOGI("pushSucceed\n");
             break;
         default:
             break;

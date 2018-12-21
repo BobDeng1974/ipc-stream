@@ -16,8 +16,8 @@
  *    Ian Craggs - add setMessageHandler function
  *******************************************************************************/
 
-#if !defined(MQTT_CLIENT_H)
-#define MQTT_CLIENT_H
+#if !defined(__MQTT_CLIENT_C_)
+#define __MQTT_CLIENT_C_
 
 #if defined(__cplusplus)
  extern "C" {
@@ -35,6 +35,7 @@
 #endif
 
 #include "MQTTPacket.h"
+#include "stdio.h"
 
 #if defined(MQTTCLIENT_PLATFORM_HEADER)
 /* The following sequence of macros converts the MQTTCLIENT_PLATFORM_HEADER value
@@ -217,7 +218,6 @@ DLLExport int MQTTYield(MQTTClient* client, int time);
  *  @return truth value indicating whether the client is connected to the server
  */
 DLLExport int MQTTIsConnected(MQTTClient* client);
-
 #if defined(MQTT_TASK)
 /** MQTT start background thread for a client.  After this, MQTTYield should not be called.
 *  @param client - the client object to use

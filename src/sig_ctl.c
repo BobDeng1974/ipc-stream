@@ -75,7 +75,7 @@ MqttContex * MqttNewContex( char *_pClientId, enum QoS _nQos, char *_pUserName,
     data.clientID.cstring = _pClientId;
     data.username.cstring = _pUserName;
     data.password.cstring = _pPasswd;
-    data.keepAliveInterval = 0;
+    data.keepAliveInterval = 10;
     data.cleansession = 1;
     rc = MQTTConnect( &pContex->c, &data );
     LOGI("rc = %d\n", rc );
