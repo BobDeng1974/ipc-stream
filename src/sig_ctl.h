@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 17:51:34
+// Last Update:2018-12-24 15:46:30
 /**
  * @file sig_ctl.h
  * @brief 
@@ -10,20 +10,25 @@
 #ifndef SIG_CTL_H
 #define SIG_CTL_H
 
-#include "MQTTLinux.h"
-#include "MQTTClient.h"
+#include "wolfmqtt/mqtt_client.h"
 
 typedef void ( *MqttMessageCb )( char *message, int len );
 
 typedef struct {
-    Network n;
-    MQTTClient c;
-    unsigned char *pSendBuf;
-    unsigned char *pReadBuf;
+    MqttNet net;
+    MqttClient client;
+    MqttConnect connect;
+    MqttSubscribe subscribe;
+    MqttUnsubscribe unsubscribe;
+    byte *tx_buf, *rx_buf;
+    MqttTopic topics[1], *topic;
+    MqttPublish publish;
+    MqttDisconnect disconnect;
     char *pTopic;
+    MqttQoS qos;
 } MqttContex;
 
-extern MqttContex * MqttNewContex( char *_pClientId, enum QoS _nQos, char *_pUserName,
+extern MqttContex * MqttNewContex( char *_pClientId, MqttQoS _nQos, char *_pUserName,
                             char *_pPasswd, char *_pTopic, char *_pHost, int _nPort, MqttMessageCb _pCb );
 extern void MqttDestroyContex( MqttContex *_pConext );
 extern int MqttYield( MqttContex *_pConext, int nTimeOut );

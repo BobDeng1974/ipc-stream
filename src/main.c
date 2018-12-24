@@ -1,4 +1,4 @@
-// Last Update:2018-12-21 11:00:59
+// Last Update:2018-12-24 15:58:27
 /**
  * @file main.c
  * @brief 
@@ -28,7 +28,7 @@ typedef struct {
     int nOutputAudioType;
     int nTimePolic;
     char *pClientId;
-    enum QoS nQos;
+    MqttQoS nQos;
     char *pUserName;
     char *pPasswd;
     char *pTopic;
@@ -67,7 +67,7 @@ static app_t app =
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
-    .pClientId = "ipc-rtmp-mqtt-10",
+    .pClientId = "ipc-rtmp-mqtt-10-2",
     .nQos = 2,
     .pUserName = NULL,
     .pPasswd = NULL,
@@ -192,14 +192,8 @@ int main()
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
-        static int i = 0;
-
-        if ( i == 100 ) {
-            LOGI("heart beat...\n");
-            i = 0;
-        }
-        MqttYield( app.pMqttContex, 1000 );
-        i++;
+        LOGI("heart beat...\n");
+        sleep( 60 );
     }
 
     return 0;

@@ -56,3 +56,5 @@ tags
 log
 *.log
 build-arm
+*.swo
+output

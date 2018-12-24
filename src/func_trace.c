@@ -1,4 +1,4 @@
-// Last Update:2018-12-21 12:33:21
+// Last Update:2018-12-24 16:25:06
 /**
  * @file func_trace.c
  * @brief 
@@ -88,7 +88,7 @@ static void SignalHandler( int sig )
 {
     FILE *fp = fopen( "/tmp/oem/app/crash.log", "w+" );
 
-    if ( fp ) {
+    if ( fp && sig != SIGINT && sig != 17 ) {
         char buffer[32] = { 0 };
         void *array[20];
         size_t size;
@@ -109,28 +109,28 @@ static void SignalHandler( int sig )
             printf("%s\n", strings[i] );
             fwrite( strings[i], strlen(strings[i]), 1, fp );
         }
-    }
 
 
-    dump_funcs( fp );
+        dump_funcs( fp );
 
-    int mapfd = open ("/proc/self/maps", O_RDONLY);
-    if (mapfd != -1)
-    {
-        fwrite( "\nMemory map:\n\n", 1, 14, fp );
+        int mapfd = open ("/proc/self/maps", O_RDONLY);
+        if (mapfd != -1)
+        {
+            fwrite( "\nMemory map:\n\n", 1, 14, fp );
 
-        char buf[256];
-        ssize_t n;
+            char buf[256];
+            ssize_t n;
 
-        while ((n = read (mapfd, buf, sizeof (buf)))) {
-            printf("%s\n", buf );
-            fwrite( buf, 1, n, fp );
+            while ((n = read (mapfd, buf, sizeof (buf)))) {
+                printf("%s\n", buf );
+                fwrite( buf, 1, n, fp );
+            }
+
+            close (mapfd);
         }
 
-        close (mapfd);
+        fclose( fp );
     }
-
-    fclose( fp );
 
     switch( sig ) {
     case SIGINT:
