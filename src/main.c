@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 11:49:17
+// Last Update:2018-12-25 17:38:21
 /**
  * @file main.c
  * @brief 
@@ -15,6 +15,8 @@
 #include "dev_core.h"
 #include "rtmp_wapper.h"
 #include "sig_ctl.h"
+#include "mqtt.h"
+#include "control.h"
 
 typedef struct {
     char *pSignal;
@@ -139,6 +141,8 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
             return;
         }
 
+        return;
+
         switch( nSignal ) {
         case pushLiveStart:
             if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
@@ -178,6 +182,7 @@ int main()
         return 0;
     }
 
+    LOGI("init mqtt\n");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
                                      app.pTopic, app.pHost, app.nPort, MqttMessageCallback ) ;
     if ( !app.pMqttContex ) {
@@ -185,6 +190,7 @@ int main()
         return 0;
     }
 
+    LOGI("init rtmp lib\n");
     pthread_mutex_init( &app.mutex, NULL );
     app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
                                    app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
@@ -199,11 +205,22 @@ int main()
         return 0;
     }
 
+    LOGI("start stream\n");
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
-        LOGI("heart beat...\n");
-        sleep( 60 );
+        char message[128] = { 0 };
+        unsigned int nIOCtrlType = 0;
+        int nSize = 0;
+        int ret = 0;
+
+        ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 10000 );
+        if ( ret == MQTT_SUCCESS ) {
+            LOGI("nIOCtrlType = %d\n", nIOCtrlType );
+            LOGI("message = %s\n", message );
+            LOGI("nSize = %d\n", nSize );
+            LOGI("heart beat...\n");
+        }
     }
 
     return 0;

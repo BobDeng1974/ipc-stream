@@ -1,4 +1,4 @@
-// Last Update:2018-12-24 15:46:30
+// Last Update:2018-12-25 16:11:54
 /**
  * @file sig_ctl.h
  * @brief 
@@ -15,17 +15,11 @@
 typedef void ( *MqttMessageCb )( char *message, int len );
 
 typedef struct {
-    MqttNet net;
-    MqttClient client;
-    MqttConnect connect;
-    MqttSubscribe subscribe;
-    MqttUnsubscribe unsubscribe;
-    byte *tx_buf, *rx_buf;
-    MqttTopic topics[1], *topic;
-    MqttPublish publish;
-    MqttDisconnect disconnect;
+    void *pInstance;
     char *pTopic;
     MqttQoS qos;
+    MqttMessageCb pCb;
+    int nSession;
 } MqttContex;
 
 extern MqttContex * MqttNewContex( char *_pClientId, MqttQoS _nQos, char *_pUserName,
