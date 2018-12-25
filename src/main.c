@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 17:38:21
+// Last Update:2018-12-25 18:57:00
 /**
  * @file main.c
  * @brief 
@@ -171,6 +171,50 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
     }
 }
 
+void EventLoop()
+{
+    char message[1000] = { 0 };
+    unsigned int nIOCtrlType = 0;
+    int nSize = 1000, nSignal = 0;
+    int ret = 0;
+    char *resp = "pushSucceed";
+
+    ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 6000 );
+    if ( ret == MQTT_SUCCESS ) {
+        LOGI("message = %s\n", message );
+        nSignal = GetMqttSignal( message );
+        switch( nSignal ) {
+        case pushLiveStart:
+            if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
+                char *pSend = "pushSucceed";
+
+                LOGI("get signal pushLiveStart, start to push rtmp stream\n");
+                app.pDev->startStream( STREAM_MAIN );
+                ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
+                LOGI("ret = %d\n", ret );
+                LOGI("set app stream running\n");
+                app.nStreamSts = STREAM_STATUS_RUNNING;
+            }
+            break;
+        case pushLiveStop:
+            if ( app.pDev ) {
+                LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
+                app.pDev->stopStream();
+                app.nStreamSts = STREAM_STATUS_STOPED;
+            }
+            break;
+        case pushSucceed:
+            LOGI("pushSucceed\n");
+            break;
+        default:
+            break;
+        }
+
+    } else if ( ret != MQTT_RETRY  && ret != MQTT_ERR_INVAL ){
+        LOGI("ret = %d\n", ret );
+    }
+}
+
 int main()
 {
     int ret = 0;
@@ -209,18 +253,7 @@ int main()
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
-        char message[128] = { 0 };
-        unsigned int nIOCtrlType = 0;
-        int nSize = 0;
-        int ret = 0;
-
-        ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 10000 );
-        if ( ret == MQTT_SUCCESS ) {
-            LOGI("nIOCtrlType = %d\n", nIOCtrlType );
-            LOGI("message = %s\n", message );
-            LOGI("nSize = %d\n", nSize );
-            LOGI("heart beat...\n");
-        }
+        EventLoop();
     }
 
     return 0;

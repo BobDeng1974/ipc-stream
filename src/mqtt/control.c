@@ -99,14 +99,16 @@ int LinkSendIOResponse(int nSession, unsigned int _nIOErrorCode, const char *_pI
         if (!Session[nSession].isUsed) {
                 return MQTT_ERR_INVAL;
         }
+#if 0
         cJSON *json = CreateResponse(_nIOErrorCode, _pIOCtrlData, _nIOCtrlDataSize);
         if (json == NULL) {
                 return MQTT_ERR_NOMEM;
         }
         char* string = cJSON_Print(json);
-        int ret = LinkMqttPublish(Session[nSession].pInstance, Session[nSession].pubTopic, strlen(string), string);
-        free(string);
-        cJSON_Delete(json);
+#endif
+        int ret = LinkMqttPublish(Session[nSession].pInstance, Session[nSession].pubTopic, strlen(_pIOCtrlData), _pIOCtrlData);
+//        free(string);
+//        cJSON_Delete(json);
         return ret;
 }
 
@@ -123,12 +125,18 @@ int LinkRecvIOCtrl(int nSession, unsigned int *_pIOCtrlType, char *_pIOCtrlData,
         if (!pMessage) {
                 return MQTT_RETRY;
         }
+
+            memcpy( _pIOCtrlData, (char*)pMessage->pMessage, *_nIOCtrlMaxDataSize );
+#if 0
+            printf("%s %d\n", __FUNCTION__, __LINE__ );
         cJSON *json = cJSON_Parse(pMessage->pMessage);
         if (json == NULL) {
+            printf("%s %d\n", __FUNCTION__, __LINE__ );
                 return MQTT_ERR_NOMEM;
         }
         cJSON *item_1 = cJSON_GetObjectItem(json, "action");
         if (item_1 == NULL) {
+            printf("%s %d\n", __FUNCTION__, __LINE__ );
                 cJSON_Delete(json);
                 return MQTT_ERR_NOMEM;
         }
@@ -147,6 +155,7 @@ int LinkRecvIOCtrl(int nSession, unsigned int *_pIOCtrlType, char *_pIOCtrlData,
         memcpy(_pIOCtrlData, params, *_nIOCtrlMaxDataSize);
         cJSON_Delete(json);
         free(params);
+#endif
         free(pMessage->pMessage);
         free(pMessage);
         return MQTT_SUCCESS;
