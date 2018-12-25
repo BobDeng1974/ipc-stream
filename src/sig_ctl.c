@@ -1,4 +1,4 @@
-// Last Update:2018-12-24 17:51:29
+// Last Update:2018-12-25 11:48:12
 /**
  * @file sig_ctl.c
  * @brief 
@@ -111,8 +111,8 @@ static int MessageArrived(MqttClient *client, MqttMessage *msg, byte msg_new, by
         buf[len] = '\0'; /* Make sure its null terminated */
 
         /* Print incoming message */
-        LOGI("MQTT Message: Topic %s, Qos %d, Len %u\n",
-               buf, msg->qos, msg->total_len);
+        /*LOGI("MQTT Message: Topic %s, Qos %d, Len %u\n",*/
+               /*buf, msg->qos, msg->total_len);*/
 
     }
 
@@ -123,8 +123,8 @@ static int MessageArrived(MqttClient *client, MqttMessage *msg, byte msg_new, by
     }
     XMEMCPY(buf, msg->buffer, len);
     buf[len] = '\0'; /* Make sure its null terminated */
-    PRINTF("Payload (%d - %d): %s",
-           msg->buffer_pos, msg->buffer_pos + len, buf);
+    /*PRINTF("Payload (%d - %d): %s",*/
+           /*msg->buffer_pos, msg->buffer_pos + len, buf);*/
     if ( pMessageCb ) {
         pMessageCb( (char *)buf, msg->total_len );
     }
@@ -147,7 +147,7 @@ static int MqttDisconnectedCb(MqttClient* client, int error_code, void* ctx)
     (void)client;
     (void)ctx;
 
-    LOGI("Disconnect (error %d)\n", error_code);
+    //LOGI("Disconnect (error %d)\n", error_code);
     return 0;
 }
 
@@ -171,7 +171,7 @@ static void *MqttWaitMessageThread( void *arg )
             break;
         } else if (rc == MQTT_CODE_ERROR_TIMEOUT) {
             /* Keep Alive */
-            LOGI("Keep-alive timeout, sending ping\n");
+            //LOGI("Keep-alive timeout, sending ping\n");
 
             rc = MqttClient_Ping( &pContex->client);
             if (rc != MQTT_CODE_SUCCESS) { LOGE("MQTT Ping Keep Alive Error: %s (%d)\n",
@@ -907,6 +907,7 @@ int MqttSend( MqttContex *_pConext, char *_pMessage, int _nLen )
         return -1;
     }
 
+    LOGI("mqtt send\n");
     /* Publish Topic */
     XMEMSET( &pContex->publish, 0, sizeof(MqttPublish));
     pContex->publish.retain = 0;
@@ -918,7 +919,7 @@ int MqttSend( MqttContex *_pConext, char *_pMessage, int _nLen )
     pContex->publish.total_len = (word16)XSTRLEN(_pMessage);
 
     rc = MqttClient_Publish( &pContex->client, &pContex->publish );
-    LOGE("MQTT Publish: Topic %s, %s (%d)", pContex->publish.topic_name,
+    LOGI("MQTT Publish: Topic %s, %s (%d)", pContex->publish.topic_name,
         MqttClient_ReturnCodeToString(rc), rc);
     if (rc != MQTT_CODE_SUCCESS) {
         LOGE("MqttClient_Publish error\n");

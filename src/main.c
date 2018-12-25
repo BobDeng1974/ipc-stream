@@ -1,4 +1,4 @@
-// Last Update:2018-12-24 15:58:27
+// Last Update:2018-12-25 11:49:17
 /**
  * @file main.c
  * @brief 
@@ -34,6 +34,7 @@ typedef struct {
     char *pTopic;
     char *pHost;
     int nPort;
+    int nStreamSts;
     MqttContex *pMqttContex;
     RtmpPubContext *pContext;
     pthread_mutex_t mutex;
@@ -58,6 +59,11 @@ enum {
 static MqttSignal gSignalList[] = 
 {
     ITEM_LIST
+};
+
+enum {
+    STREAM_STATUS_RUNNING,
+    STREAM_STATUS_STOPED,
 };
 
 static app_t app = 
@@ -126,7 +132,7 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
     int nSignal = 0;
 
     if ( _pMessage ) {
-        LOGI("get message %s\n", _pMessage );
+//        LOGI("get message %s\n", _pMessage );
         nSignal = GetMqttSignal( _pMessage );
         if ( nSignal == -1 ) {
             LOGE("signal %s not found\n", _pMessage );
@@ -135,18 +141,21 @@ static void MqttMessageCallback( char *_pMessage, int nLen )
 
         switch( nSignal ) {
         case pushLiveStart:
-            if ( app.pDev ) {
+            if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
                 char *pSend = "pushSucceed";
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.pDev->startStream( STREAM_MAIN );
                 MqttSend( app.pMqttContex, pSend, strlen(pSend) );
+                LOGI("set app stream running\n");
+                app.nStreamSts = STREAM_STATUS_RUNNING;
             }
             break;
         case pushLiveStop:
             if ( app.pDev ) {
                 LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
                 app.pDev->stopStream();
+                app.nStreamSts = STREAM_STATUS_STOPED;
             }
             break;
         case pushSucceed:
@@ -163,6 +172,7 @@ int main()
     int ret = 0;
 
     app.pDev = NewCoreDevice();
+    app.nStreamSts = STREAM_STATUS_STOPED;
     if ( !app.pDev ) {
         LOGE("NewCoreDevice() error\n");
         return 0;
