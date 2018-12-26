@@ -9,7 +9,6 @@
 - [x] sdk内部解码nalu和adts
 
 ## 编译
-git submodule update --init --recursive
 
 #### X86
 - mkdir build
@@ -32,11 +31,10 @@ git submodule update --init --recursive
 #### 推流
 - RtmpNewContext,新建推流上下文
 - RtmpSendVideo,发送视频数据(非线程安全，使用时需要加锁)
-- RtmpSendAudio,发送音频数据(非现成安全，使用时需要加锁)
+- RtmpSendAudio,发送音频数据(非线程安全，使用时需要加锁)
 - RtmpConnect,连接RTMP服务器
 
 #### 信令
-- MqttNewContex,新建MQTT上下文
-- MqttDestroyContex,销毁MQTT上下文
-- MqttYield，轮询消息
-- MqttSend,发送MQTT消息
+- LinkMqttCreateInstance,创建mqtt实例
+- LinkRecvIOCtrl,接收信令
+- LinkSendIOResponse,发送信令
