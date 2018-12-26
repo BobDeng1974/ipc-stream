@@ -1,0 +1,7 @@
+cmake_minimum_required (VERSION 2.8)
+
+AUX_SOURCE_DIRECTORY( ./ DIR_SRCS)
+AUX_SOURCE_DIRECTORY( ./cJSON DIR_SRCS)
+AUX_SOURCE_DIRECTORY( ./wolfmqtt DIR_SRCS)
+
+add_library(mqtt STATIC ${DIR_SRCS} )

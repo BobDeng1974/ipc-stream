@@ -1,4 +1,4 @@
-// Last Update:2018-12-17 16:49:21
+// Last Update:2018-12-26 09:59:09
 /**
  * @file h264_decode_test.c
  * @brief 
@@ -21,7 +21,7 @@
 
 static char gbuffer[ MAX_BUF_LEN ];
 
-#include "../../h264_decode.c"
+#include "../librtmp_wrapper/h264_decode.c"
 
 static void DumpBuffer( char *_pBufName, char *_pBuf, int _nLen, int _nLine )
 {

@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
 set( APPNAME tests )
-project( ${APPNAME} )
 add_definitions( "-Wall -g" )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../ )
-AUX_SOURCE_DIRECTORY( ./src SRCS)
+AUX_SOURCE_DIRECTORY( ./ SRCS)
 ADD_EXECUTABLE( ${APPNAME} ${SRCS} )

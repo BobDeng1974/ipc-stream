@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 18:36:47
+// Last Update:2018-12-25 19:11:46
 /**
  * @file sig_ctl.c
  * @brief 
@@ -41,7 +41,6 @@ static void OnEvent(const void* _pInstance, int _nAccountId, int _nId,  const ch
 
     if ( _nId == 3000 && mMqttContex ) {
         LOGI("start to subscribe %s \n", mMqttContex->pTopic);
-        //LinkMqttSubscribe( _pInstance, mMqttContex->pTopic );
         mMqttContex->nSession = LinkInitIOCtrl( NULL, NULL, _pInstance );
     }
 
@@ -53,7 +52,7 @@ MqttContex * MqttNewContex( char *_pClientId, MqttQoS _nQos, char *_pUserName,
     MqttContex *pContex = NULL;
     struct MqttOptions options, *ops = &options;
 
-    if ( !_pClientId || !_pTopic || !_pHost || !_pCb ) {
+    if ( !_pClientId || !_pTopic || !_pHost ) {
         LOGE("check param error\n");
         return NULL;
     }

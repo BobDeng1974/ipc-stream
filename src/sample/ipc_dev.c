@@ -1,4 +1,4 @@
-// Last Update:2018-12-19 09:59:39
+// Last Update:2018-12-25 20:56:43
 /**
  * @file ipc_dev.c
  * @brief 
@@ -6,6 +6,7 @@
  * @version 0.1.00
  * @date 2018-10-19
  */
+#ifdef __ARM
 #include <string.h>
 #include "devsdk.h"
 #include "dbg.h"
@@ -13,7 +14,6 @@
 
 extern CaptureDevice gIpcCaptureDev;
 
-#ifdef __ARM
 static int AjVideoGetFrameCb( int streamno, char *_pFrame,
                    int _nLen, int _nIskey, double _dTimeStamp,
                    unsigned long _nFrameIndex, unsigned long _nKeyFrameIndex,

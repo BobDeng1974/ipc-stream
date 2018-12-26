@@ -1,10 +1,5 @@
-[submodule "third_party/paho"]
-	path = third_party/paho
-	url = https://github.com/eclipse/paho.mqtt.embedded-c
-	branch = master
-        ignore = dirty
 [submodule "third_party/ipcam_sdk"]
 	path = third_party/ipcam_sdk
 	url = https://github.com/pili-engineering/ipcam_sdk
 	branch = master
-        ignore = dirty
+    ignore = dirty

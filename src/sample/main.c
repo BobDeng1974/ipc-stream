@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 18:57:00
+// Last Update:2018-12-25 20:44:48
 /**
  * @file main.c
  * @brief 
@@ -129,48 +129,6 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     return 0;
 }
 
-static void MqttMessageCallback( char *_pMessage, int nLen )
-{
-    int nSignal = 0;
-
-    if ( _pMessage ) {
-//        LOGI("get message %s\n", _pMessage );
-        nSignal = GetMqttSignal( _pMessage );
-        if ( nSignal == -1 ) {
-            LOGE("signal %s not found\n", _pMessage );
-            return;
-        }
-
-        return;
-
-        switch( nSignal ) {
-        case pushLiveStart:
-            if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
-                char *pSend = "pushSucceed";
-
-                LOGI("get signal pushLiveStart, start to push rtmp stream\n");
-                app.pDev->startStream( STREAM_MAIN );
-                MqttSend( app.pMqttContex, pSend, strlen(pSend) );
-                LOGI("set app stream running\n");
-                app.nStreamSts = STREAM_STATUS_RUNNING;
-            }
-            break;
-        case pushLiveStop:
-            if ( app.pDev ) {
-                LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
-                app.pDev->stopStream();
-                app.nStreamSts = STREAM_STATUS_STOPED;
-            }
-            break;
-        case pushSucceed:
-            LOGI("pushSucceed\n");
-            break;
-        default:
-            break;
-        }
-    }
-}
-
 void EventLoop()
 {
     char message[1000] = { 0 };
@@ -186,7 +144,6 @@ void EventLoop()
         switch( nSignal ) {
         case pushLiveStart:
             if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
-                char *pSend = "pushSucceed";
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.pDev->startStream( STREAM_MAIN );
@@ -228,7 +185,7 @@ int main()
 
     LOGI("init mqtt\n");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
-                                     app.pTopic, app.pHost, app.nPort, MqttMessageCallback ) ;
+                                     app.pTopic, app.pHost, app.nPort, NULL ) ;
     if ( !app.pMqttContex ) {
         LOGE("MqttNewContex error\n");
         return 0;
@@ -253,7 +210,12 @@ int main()
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
+        char memUsed[16] = { 0 };
+
         EventLoop();
+
+        DbgGetMemUsed( memUsed );
+        LOGI("memory used : %s\n", memUsed );
     }
 
     return 0;

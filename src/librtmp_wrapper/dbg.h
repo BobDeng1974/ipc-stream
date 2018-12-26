@@ -25,4 +25,7 @@
     } \
 } while(0)
 
+
+extern int DbgGetMemUsed( char *memUsed );
+
 #endif  /*DBG_H*/
