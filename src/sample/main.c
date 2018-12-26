@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 12:01:23
+// Last Update:2018-12-26 16:23:42
 /**
  * @file main.c
  * @brief 
@@ -109,6 +109,7 @@ int VideoFrameCallBack ( char *_pFrame,
     pthread_mutex_lock( &app.mutex );
     ret = RtmpSendVideo( app.pContext, _pFrame, _nLen, _nIskey, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
+        app.pDev->stopStream();
         LOGE("RtmpSendVideo error\n");
     }
     pthread_mutex_unlock( &app.mutex );
@@ -126,6 +127,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     ret = RtmpSendAudio( app.pContext, _pFrame, _nLen, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
         LOGE("RtmpSendAudio error\n");
+        app.pDev->stopStream();
     }
     pthread_mutex_unlock( &app.mutex );
     return 0;
@@ -221,8 +223,8 @@ int main()
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
-//        DbgGetMemUsed( memUsed );
-//        LOGI("memory used : %s\n", memUsed );
+        DbgGetMemUsed( memUsed );
+        LOGI("memory used : %s\n", memUsed );
     }
 
     return 0;
