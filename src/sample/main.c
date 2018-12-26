@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 20:44:48
+// Last Update:2018-12-26 11:27:59
 /**
  * @file main.c
  * @brief 
@@ -98,6 +98,7 @@ int GetMqttSignal( char *pMqttSignal )
     return -1;
 }
 
+/* 6.视频帧回调，摄像头采集到一帧h264图像，调用此回调，调用接口RtmpSendVideo发送视频流 */
 int VideoFrameCallBack ( char *_pFrame, 
                    int _nLen, int _nIskey, double _dTimeStamp, 
                    unsigned long _nFrameIndex, unsigned long _nKeyFrameIndex, 
@@ -115,6 +116,7 @@ int VideoFrameCallBack ( char *_pFrame,
     return 0;
 }
 
+/* 7.音频帧回调，摄像头采集到帧aac音频数据，调用此回调，调用接口RtmpSendAudio发送音频流 */
 int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
                      unsigned long _nFrameIndex, int streamno )
 {
@@ -176,13 +178,13 @@ int main()
 {
     int ret = 0;
 
-    app.pDev = NewCoreDevice();
     app.nStreamSts = STREAM_STATUS_STOPED;
     if ( !app.pDev ) {
         LOGE("NewCoreDevice() error\n");
         return 0;
     }
 
+    /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
                                      app.pTopic, app.pHost, app.nPort, NULL ) ;
@@ -191,6 +193,7 @@ int main()
         return 0;
     }
 
+    /* 2.初始化rtmp推流 */
     LOGI("init rtmp lib\n");
     pthread_mutex_init( &app.mutex, NULL );
     app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
@@ -200,18 +203,22 @@ int main()
         return 0;
     }
 
+    /* 3.连接rtmp推流服务器 */
     ret = RtmpConnect( app.pContext );
     if ( ret < 0 ) {
         LOGE("RtmpConnect error\n");
         return 0;
     }
 
-    LOGI("start stream\n");
+    /* 4.初始化网络摄像头，注册视音频帧回调 */
+    LOGI("start to init ipc\n");
+    app.pDev = NewCoreDevice();
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {
         char memUsed[16] = { 0 };
 
+        /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
         DbgGetMemUsed( memUsed );
