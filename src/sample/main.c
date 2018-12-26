@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 11:37:01
+// Last Update:2018-12-26 12:01:23
 /**
  * @file main.c
  * @brief 
@@ -221,8 +221,8 @@ int main()
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
-        DbgGetMemUsed( memUsed );
-        LOGI("memory used : %s\n", memUsed );
+//        DbgGetMemUsed( memUsed );
+//        LOGI("memory used : %s\n", memUsed );
     }
 
     return 0;

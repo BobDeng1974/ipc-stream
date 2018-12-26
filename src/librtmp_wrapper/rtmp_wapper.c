@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 11:31:54
+// Last Update:2018-12-26 14:12:37
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -132,6 +132,7 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
         }
     }
 
+    free( pBufAddr );
     return 0;
 err:
     free( pBufAddr );
@@ -172,12 +173,12 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
     ret = AacDecodeAdts( _pData, _nSize, adts, &nSize );
     if ( ret != ADTS_DECODE_OK ) {
         LOGI("adts decode fail, ret = %d\n", ret );
-        return -1;
+        goto err;
     }
 
     if ( nSize <= 0 || nSize >= MAX_ADTS_PER_FRAME ) {
         LOGI("check nSize error, nSize = %d\n", nSize );
-        return -1;
+        goto err;
     }
 
     memset( pBuf, 0, _nSize );
@@ -194,11 +195,14 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
     ret = RtmpPubSendAudioFrame( _pConext, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
     if ( ret < 0 ) {
         LOGE("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
-        return -1;
+        goto err;
     }
 
     free( pBufAddr );
     return 0;
+err:
+    free( pBufAddr );
+    return -1;
 }
 
 
