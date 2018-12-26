@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "dbg.h"
+#include "dbg_internal.h"
 #include "unit_test.h"
 #include "adts.h"
 #include "adts.c"

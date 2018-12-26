@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 14:12:37
+// Last Update:2018-12-26 17:19:15
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "dbg.h"
+#include "dbg_internal.h"
 #include "h264_decode.h"
 #include "rtmp_publish.h"
 #include "adts.h"

@@ -8,7 +8,7 @@
  */
 
 #include <stdio.h>
-#include "dbg.h"
+#include "dbg_internal.h"
 #include "h264_decode_test.h"
 #include "adts_deocde_test.h"
 

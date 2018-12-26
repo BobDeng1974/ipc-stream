@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 16:23:42
+// Last Update:2018-12-26 17:26:54
 /**
  * @file main.c
  * @brief 
@@ -181,6 +181,8 @@ int main()
     int ret = 0;
 
     app.nStreamSts = STREAM_STATUS_STOPED;
+
+    LoggerInit( 1, OUTPUT_FILE, "/mnt/nfs/ipc-rtmp-stream.log", 1 );
 
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");

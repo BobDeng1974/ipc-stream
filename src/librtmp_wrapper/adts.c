@@ -1,4 +1,4 @@
-// Last Update:2018-12-17 19:11:40
+// Last Update:2018-12-26 17:20:10
 /**
  * @file adts.c
  * @brief 
@@ -9,7 +9,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
-#include "dbg.h"
+#include "dbg_internal.h"
 #include "adts.h"
 
 #define ADTS_SYNCWORKD 0xFFF

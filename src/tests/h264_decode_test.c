@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "dbg.h"
+#include "dbg_internal.h"
 #include "h264_decode.h"
 #include "unit_test.h"
 #include "h264_decode_test.h"
