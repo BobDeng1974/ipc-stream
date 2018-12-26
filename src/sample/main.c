@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 17:26:54
+// Last Update:2018-12-26 17:40:56
 /**
  * @file main.c
  * @brief 
@@ -147,21 +147,19 @@ void EventLoop()
         nSignal = GetMqttSignal( message );
         switch( nSignal ) {
         case pushLiveStart:
-            if ( app.pDev  && (app.nStreamSts == STREAM_STATUS_STOPED) ) {
+            if ( app.pDev ) {
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.pDev->startStream( STREAM_MAIN );
                 ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
                 LOGI("ret = %d\n", ret );
                 LOGI("set app stream running\n");
-                app.nStreamSts = STREAM_STATUS_RUNNING;
             }
             break;
         case pushLiveStop:
             if ( app.pDev ) {
                 LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
                 app.pDev->stopStream();
-                app.nStreamSts = STREAM_STATUS_STOPED;
             }
             break;
         case pushSucceed:
@@ -221,12 +219,17 @@ int main()
 
     for (;;) {
         char memUsed[16] = { 0 };
+        static count = 0;
 
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
         DbgGetMemUsed( memUsed );
-        LOGI("memory used : %s\n", memUsed );
+        if ( count == 32 ) {
+            count = 0;
+            LOGI("memory used : %s\n", memUsed );
+        }
+        count++;
     }
 
     return 0;
