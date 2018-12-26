@@ -68,13 +68,11 @@ int H264DecodeFrame( char *_pFrame, int _nLen, OUT NalUnit *_pNalus, int *_pSize
 
     /* the last one */
     _pNalus += nIndex -1 ;
-    //LOGI("_pNalus->type = %d, nIndex = %d\n", _pNalus->type, nIndex );
     if ( nIndex == 1 ) {
         _pNalus->size = pEnd - _pNalus ->addr ;
     } else {
         _pNalus->size = pEnd - ( _pNalus - 1 )->addr ;
     }
-   // LOGI("_pNalus->size = %d\n", _pNalus->size );
 
     *_pSize = nIndex;
 

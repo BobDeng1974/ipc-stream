@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 11:27:59
+// Last Update:2018-12-26 11:37:01
 /**
  * @file main.c
  * @brief 
@@ -75,7 +75,7 @@ static app_t app =
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
-    .pClientId = "ipc-rtmp-mqtt-10-2",
+    .pClientId = "ipc-rtmp-mqtt-208",
     .nQos = 2,
     .pUserName = NULL,
     .pPasswd = NULL,
@@ -179,10 +179,6 @@ int main()
     int ret = 0;
 
     app.nStreamSts = STREAM_STATUS_STOPED;
-    if ( !app.pDev ) {
-        LOGE("NewCoreDevice() error\n");
-        return 0;
-    }
 
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");
@@ -213,6 +209,10 @@ int main()
     /* 4.初始化网络摄像头，注册视音频帧回调 */
     LOGI("start to init ipc\n");
     app.pDev = NewCoreDevice();
+    if ( !app.pDev ) {
+        LOGE("NewCoreDevice() error\n");
+        return 0;
+    }
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
 
     for (;;) {

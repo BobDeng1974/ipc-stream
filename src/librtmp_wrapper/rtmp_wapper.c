@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 09:31:09
+// Last Update:2018-12-26 11:31:54
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -87,8 +87,7 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
                 RtmpPubSetVideoTimebase( _pConext, _nPresentationTime );
                 RtmpPubSetSps( _pConext, pNalu->addr, pNalu->size );
             } else {
-                //LOGE("get sps error\n");
-                //goto err;
+                /* do nothing */
             }
             break;
         case NALU_TYPE_PPS:
@@ -97,13 +96,11 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
                 RtmpPubSetPps( _pConext, pNalu->addr, pNalu->size );
                 nIsFirst = 0;
             } else {
-                //LOGE("get sps error\n");
-                //goto err;
+                /* do nothing */
             }
             break;
         case NALU_TYPE_IDR:
         case NALU_TYPE_SLICE:
-            //LOGI("pNalu->type = %d\n", pNalu->type );
             if ( pNalu->addr && pNalu->size > 0 ) {
                 memcpy( pBuf, pNalu->addr, pNalu->size );
                 pBuf += pNalu->size;
@@ -121,7 +118,6 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
         LOGE("nalus over flow\n");
     }
 
-    //LOGI("pBuf - pBufAddr = %ld\n", pBuf - pBufAddr);
     if ( _nIsKey ) {
         ret = RtmpPubSendVideoKeyframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
@@ -195,7 +191,6 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
         pAdts++;
     }
 
-//    LOGI("pBuf - pBufAddr = %ld\n", pBuf - pBufAddr);
     ret = RtmpPubSendAudioFrame( _pConext, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
     if ( ret < 0 ) {
         LOGE("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
