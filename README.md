@@ -22,19 +22,8 @@
 - cmake .. -DARM=yes
 - make
 
-## demo概述
+## sample概述
 - 使用mqtt主题为"pushLive"
 - 收到信令"pushLiveStart"开始推流，此时需要发送信令"pushSucceed"给客户端
 - 收到信令"pushLiveStop"停止推流
 
-## sdk核心API
-#### 推流
-- RtmpNewContext,新建推流上下文
-- RtmpSendVideo,发送视频数据(非线程安全，使用时需要加锁)
-- RtmpSendAudio,发送音频数据(非线程安全，使用时需要加锁)
-- RtmpConnect,连接RTMP服务器
-
-#### 信令
-- LinkMqttCreateInstance,创建mqtt实例
-- LinkRecvIOCtrl,接收信令
-- LinkSendIOResponse,发送信令
