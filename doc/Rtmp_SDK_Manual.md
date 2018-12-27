@@ -285,6 +285,7 @@ RtmpContex * RtmpNewContext( const char * _url,
  * @param[in] _nIsKey 是否为关键帧
  * @param[in] _nPresentationTime 时间戳
  * @return -1 : 失败 0 : 成功
+ * 注意此函数非线程安全，使用需要加锁
  */
 int RtmpSendVideo( RtmpContex *_pConext,
                    char *_pData,
@@ -305,6 +306,7 @@ int RtmpSendVideo( RtmpContex *_pConext,
  * @param[in] _nSize 音频数据大小
  * @param[in] _nPresentationTime 时间戳
  * @return -1 : 失败 0 : 成功
+ * 注意此函数非线程安全，使用需要加锁
  */
 
 int RtmpSendAudio( RtmpContex *_pConext,
