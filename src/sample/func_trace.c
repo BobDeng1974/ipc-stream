@@ -1,4 +1,4 @@
-// Last Update:2018-12-24 16:25:06
+// Last Update:2018-12-27 10:51:15
 /**
  * @file func_trace.c
  * @brief 
@@ -84,21 +84,83 @@ static void __attribute__((__no_instrument_function__))
     }
 }
 
+typedef struct {
+    char *str;
+    int sig;
+} SigInfo;
+
+
+#define ITEM_LIST \
+    ADD_SIGNAL_ITEM( SIGHUP ) \
+    ADD_SIGNAL_ITEM( SIGINT ) \
+    ADD_SIGNAL_ITEM( SIGQUIT ) \
+    ADD_SIGNAL_ITEM( SIGILL ) \
+    ADD_SIGNAL_ITEM( SIGABRT ) \
+    ADD_SIGNAL_ITEM( SIGFPE ) \
+    ADD_SIGNAL_ITEM( SIGKILL ) \
+    ADD_SIGNAL_ITEM( SIGSEGV ) \
+    ADD_SIGNAL_ITEM( SIGPIPE ) \
+    ADD_SIGNAL_ITEM( SIGALRM ) \
+    ADD_SIGNAL_ITEM( SIGTERM ) \
+    ADD_SIGNAL_ITEM( SIGUSR1 ) \
+    ADD_SIGNAL_ITEM( SIGUSR2 ) \
+    ADD_SIGNAL_ITEM( SIGCHLD ) \
+    ADD_SIGNAL_ITEM( SIGCONT ) \
+    ADD_SIGNAL_ITEM( SIGSTOP ) \
+    ADD_SIGNAL_ITEM( SIGTTIN ) \
+    ADD_SIGNAL_ITEM( SIGTTOU ) \
+    ADD_SIGNAL_ITEM( SIGBUS ) \
+    ADD_SIGNAL_ITEM( SIGPOLL ) \
+    ADD_SIGNAL_ITEM( SIGPROF ) \
+    ADD_SIGNAL_ITEM( SIGSYS ) \
+    ADD_SIGNAL_ITEM( SIGTRAP ) \
+    ADD_SIGNAL_ITEM( SIGURG ) \
+    ADD_SIGNAL_ITEM( SIGVTALRM ) \
+    ADD_SIGNAL_ITEM( SIGXCPU ) \
+    ADD_SIGNAL_ITEM( SIGXFSZ ) \
+    ADD_SIGNAL_ITEM( SIGIOT ) \
+    ADD_SIGNAL_ITEM( SIGSTKFLT ) \
+    ADD_SIGNAL_ITEM( SIGIO ) \
+    ADD_SIGNAL_ITEM( SIGCLD ) \
+    ADD_SIGNAL_ITEM( SIGPWR ) \
+    ADD_SIGNAL_ITEM( SIGWINCH ) \
+    ADD_SIGNAL_ITEM( SIGUNUSED ) 
+
+
+#define ADD_SIGNAL_ITEM( item ) { #item, item },
+#define ARRSZ(arr) (sizeof(arr)/sizeof(arr[0]))
+
+static SigInfo gSignalList[] = 
+{
+    ITEM_LIST
+};
+
 static void SignalHandler( int sig )
 {
     FILE *fp = fopen( "/tmp/oem/app/crash.log", "w+" );
 
-    if ( fp && sig != SIGINT && sig != 17 ) {
+    if ( fp && sig != SIGINT && sig != 17 && sig != 15 ) {
         char buffer[32] = { 0 };
         void *array[20];
         size_t size;
         char **strings;
         size_t i;
+        char *pSigStr = NULL;
+
+        for ( i=0; i<ARRSZ(gSignalList); i++ ) {
+            if ( sig == gSignalList[i].sig ) {
+                pSigStr = gSignalList[i].str;
+            }
+        }
 
         size = backtrace (array, 20);
         strings = backtrace_symbols (array, size);
 
-        sprintf( buffer, "get sig %d\n", sig );
+        if( pSigStr ) {
+            sprintf( buffer, "get sig %s\n", pSigStr );
+        } else {
+            sprintf( buffer, "get sig %d\n", sig );
+        }
         fwrite( buffer, strlen(buffer), 1, fp );
         printf("%s\n", buffer );
         memset( buffer, 0, sizeof(buffer) );

@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 17:40:56
+// Last Update:2018-12-27 11:05:54
 /**
  * @file main.c
  * @brief 
@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include "log.h"
 #include "dbg.h"
 #include "dev_core.h"
 #include "rtmp_wapper.h"
@@ -174,13 +175,19 @@ void EventLoop()
     }
 }
 
+void SdkLogCallBack( char *log )
+{
+    LOGI( log );
+}
+
 int main()
 {
     int ret = 0;
 
     app.nStreamSts = STREAM_STATUS_STOPED;
 
-    LoggerInit( 1, OUTPUT_FILE, "/mnt/nfs/ipc-rtmp-stream.log", 1 );
+    SetLogCallBack( SdkLogCallBack );
+    LoggerInit( 1, OUTPUT_FILE, "/tmp/ipc-rtmp-stream.log", 1 );
 
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");
@@ -219,13 +226,13 @@ int main()
 
     for (;;) {
         char memUsed[16] = { 0 };
-        static count = 0;
+        static int count = 0;
 
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
         DbgGetMemUsed( memUsed );
-        if ( count == 32 ) {
+        if ( count == 16 ) {
             count = 0;
             LOGI("memory used : %s\n", memUsed );
         }

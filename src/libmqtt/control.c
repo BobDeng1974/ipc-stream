@@ -6,6 +6,7 @@
 #include "control_internal.h"
 #include "queue.h"
 #include "cJSON/cJSON.h"
+#include "log.h"
 
 struct _LinkIOCrtlInfo Session[10] = {0};
 struct _LinkIOCrtlInfo LogSession = {0};
@@ -15,10 +16,11 @@ void OnIOCtrlMessage(IN const void* _pInstance, IN int _nAccountId, IN const cha
         Message *pMessage = (Message *) malloc(sizeof(Message));
         char* message = (char*) malloc(nLength);
         if ( !pMessage || !message ) {
+                LOGE("pMessage = %p, message = %p\n", pMessage, message );
                 return;
         }
         pMessage->nMessageID = -1;
-	int i;
+        int i;
         for (i = 0; i < 10; ++ i) {
                 if (Session[i].isUsed && _pInstance == Session[i].pInstance) {
                         pMessage->nMessageID = i;
@@ -26,6 +28,7 @@ void OnIOCtrlMessage(IN const void* _pInstance, IN int _nAccountId, IN const cha
                 }
         }
         if (pMessage->nMessageID == -1) {
+                LOGE("pMessage->nMessageID == -1\n");
                 free(pMessage);
                 return;
         }

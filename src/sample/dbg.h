@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 17:25:28
+// Last Update:2018-12-27 09:55:50
 /**
  * @file dbg.h
  * @brief 
@@ -61,6 +61,30 @@ typedef struct {
 #define CLEAR                "\e[2J"
 #define CLRLINE              "\r\e[K" //or "\e[1K\r"
 
+#ifdef LOG
+#undef LOG
+#endif
+
+#ifdef DBG_ERROR
+#undef DBG_ERROR
+#endif
+
+#ifdef DBG_LOG
+#undef DBG_LOG
+#endif
+
+#ifdef BASIC
+#undef BASIC
+#endif
+
+#ifdef LOGE
+#undef LOGE
+#endif
+
+#ifdef LOGI
+#undef LOGI
+#endif
+
 #define LOG(args...) dbg( DBG_LEVEL_DEBUG, __FILE__, __FUNCTION__, __LINE__, args )
 #define DBG_ERROR(args...) dbg( DBG_LEVEL_FATAL, __FILE__, __FUNCTION__, __LINE__, args )
 #define DBG_LOG(args...) LOG(args)
@@ -73,5 +97,6 @@ typedef struct {
 
 extern int LoggerInit( unsigned printTime, int output, char *pLogFile, int logVerbose );
 extern int dbg( unsigned logLevel, const char *file, const char *function, int line, const char *format, ...  );
+extern int DbgGetMemUsed( char *memUsed );
 
 #endif  /*DBG_H*/

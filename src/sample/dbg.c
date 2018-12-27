@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 17:31:17
+// Last Update:2018-12-27 11:06:40
 /**
  * @file dbg.c
  * @brief 
@@ -25,7 +25,7 @@ static Logger gLogger;
 
 int FileOpen( char *_pLogFile )
 {
-    gLogger.fp = fopen( _pLogFile, "w+" );
+    gLogger.fp = fopen( _pLogFile, "a+" );
     if ( !gLogger.fp ) {
         printf("open file %s error\n", _pLogFile );
         return -1;

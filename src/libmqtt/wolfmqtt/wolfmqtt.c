@@ -4,6 +4,7 @@
 #include "mqtt_socket.h"
 #include "mqtt_client.h"
 #include "mqttnet.h"
+#include "log.h"
 
 #include <signal.h>
 
@@ -198,7 +199,7 @@ static int OnMessageCallback(struct _MqttClient *client, MqttMessage *_pMessage,
                 memset(pInstance->mosq->message, 0, MAX_MQTT_MESSAGE_LEN);
                 memcpy(pInstance->mosq->message_topic, _pMessage->topic_name, min((MAX_MQTT_TOPIC_LEN - 1), _pMessage->topic_name_len));
                 memcpy(pInstance->mosq->message, _pMessage->buffer, min((MAX_MQTT_MESSAGE_LEN - 1), _pMessage->buffer_len));
-                printf("topic %s \n", pInstance->mosq->message_topic);
+                LOGI("topic %s \n", pInstance->mosq->message_topic);
                 if (memcmp(pInstance->mosq->message_topic, IO_CTR_MESSAGE, IO_CTR_MESSAGE_LENGTH) == 0) {
                         OnIOCtrlMessage(pInstance, pInstance->options.nAccountId, pInstance->mosq->message_topic,
                                         (const char *)pInstance->mosq->message, min((MAX_MQTT_MESSAGE_LEN - 1), _pMessage->buffer_len));

@@ -18,6 +18,7 @@
 #include "dbg.h"
 #include "sig_ctl.h"
 #include "mqtt.h"
+#include "control.h"
 
 static MqttContex *mMqttContex;
 
