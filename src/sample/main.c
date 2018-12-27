@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 16:08:45
+// Last Update:2018-12-27 16:08:48
 /**
  * @file main.c
  * @brief 
@@ -111,7 +111,6 @@ int RtmpReconnect()
         return -1;
     }
 
-    /* 3.连接rtmp推流服务器 */
     ret = RtmpConnect( app.pContext );
     if ( ret < 0 ) {
         LOGE("RtmpConnect error\n");
