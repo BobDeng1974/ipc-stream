@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 14:34:24
+// Last Update:2018-12-27 16:17:04
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -14,44 +14,53 @@
 #include "h264_decode.h"
 #include "rtmp_publish.h"
 #include "adts.h"
+#include "rtmp_wapper.h"
 
 #define MAX_NALUS_PER_FRAME 64
 #define MAX_ADTS_PER_FRAME 128
 
-RtmpPubContext * RtmpNewContext( const char * _url, unsigned int _nTimeout,
+RtmpContex * RtmpNewContext( const char * _url, unsigned int _nTimeout,
                                  RtmpPubAudioType _nInputAudioType,
                                  RtmpPubAudioType _nOutputAudioType,
                                  RtmpPubTimeStampPolicy _nTimePolic)
 {
-    RtmpPubContext *ctx = NULL;
+    RtmpContex *ctx = NULL;
     int ret = 0;
 
     if ( !_url ) {
         return NULL;
     }
 
-    ctx = RtmpPubNew( _url, _nTimeout, _nInputAudioType, _nOutputAudioType, _nTimePolic );
-    if ( !ctx ) {
+    ctx = ( RtmpContex *) malloc ( sizeof(RtmpContex) );
+    if ( !ctx  ) {
+        LOGE("malloc error\n");
         return NULL;
     }
 
-    ret = RtmpPubInit( ctx );
-    if ( ret != 0 ) {
-        RtmpPubDel( ctx );
+    ctx->pPubCtx = RtmpPubNew( _url, _nTimeout, _nInputAudioType, _nOutputAudioType, _nTimePolic );
+    if ( !ctx->pPubCtx ) {
         return NULL;
     }
+
+    ret = RtmpPubInit( ctx->pPubCtx );
+    if ( ret != 0 ) {
+        RtmpPubDel( ctx->pPubCtx );
+        return NULL;
+    }
+
+    ctx->nVideoRestart = 1;
+    ctx->nAudioRestart = 1;
 
     return ctx;
 }
 
-int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
+int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
                    unsigned int _nSize, int _nIsKey, unsigned int _nPresentationTime )
 {
     NalUnit nalus[MAX_NALUS_PER_FRAME], *pNalu = nalus;
     int ret = 0, i = 0;
     int size = MAX_NALUS_PER_FRAME;
     char *pBuf = ( char *)malloc( _nSize ), *pBufAddr = pBuf;
-    static int nIsFirst = 1;
 
     if ( !_pConext || !_pData ) {
         LOGE("check param error\n");
@@ -82,19 +91,19 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
     for ( i=0; i<size; i++ ) {
         switch( pNalu->type ) {
         case NALU_TYPE_SPS:
-            if ( pNalu->addr && pNalu->size > 0 && nIsFirst ) {
+            if ( pNalu->addr && pNalu->size > 0 && _pConext->nVideoRestart ) {
                 LOGI("set sps\n");
-                RtmpPubSetVideoTimebase( _pConext, _nPresentationTime );
-                RtmpPubSetSps( _pConext, pNalu->addr, pNalu->size );
+                RtmpPubSetVideoTimebase( _pConext->pPubCtx, _nPresentationTime );
+                RtmpPubSetSps( _pConext->pPubCtx, pNalu->addr, pNalu->size );
             } else {
                 /* do nothing */
             }
             break;
         case NALU_TYPE_PPS:
-            if ( pNalu->addr && pNalu->size > 0 && nIsFirst ) {
+            if ( pNalu->addr && pNalu->size > 0 && _pConext->nVideoRestart ) {
                 LOGI("set pps\n");
-                RtmpPubSetPps( _pConext, pNalu->addr, pNalu->size );
-                nIsFirst = 0;
+                RtmpPubSetPps( _pConext->pPubCtx, pNalu->addr, pNalu->size );
+                _pConext->nVideoRestart = 0;
             } else {
                 /* do nothing */
             }
@@ -119,13 +128,13 @@ int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
     }
 
     if ( _nIsKey ) {
-        ret = RtmpPubSendVideoKeyframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
+        ret = RtmpPubSendVideoKeyframe( _pConext->pPubCtx, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
             LOGE("RtmpPubSendVideoKeyframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
         }
     } else {
-        ret = RtmpPubSendVideoInterframe( _pConext, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
+        ret = RtmpPubSendVideoInterframe( _pConext->pPubCtx, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
             LOGE("RtmpPubSendVideoInterframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
@@ -139,10 +148,9 @@ err:
     return -1;
 }
 
-int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
+int RtmpSendAudio( RtmpContex *_pConext, char *_pData,
                    unsigned int _nSize, unsigned int _nPresentationTime )
 {
-    static int nIsFirst = 1;
     int ret = 0, nSize = MAX_ADTS_PER_FRAME, i = 0;
     Adts adts[ MAX_ADTS_PER_FRAME ], *pAdts = adts;
     char *pBuf = (char *) malloc ( _nSize ),  *pBufAddr = NULL;;
@@ -160,14 +168,19 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
         return -1;
     }
 
+    if ( !_pConext->pPubCtx ) {
+        LOGE("check pPubCtx error\n");
+        return -1;
+    }
+
     pBufAddr = pBuf;
 
-    if ( nIsFirst ) {
+    if ( _pConext->nAudioRestart ) {
         char audioSpecCfg[] = { 0x14, 0x10 };
 
-        RtmpPubSetAudioTimebase( _pConext, _nPresentationTime );
-        RtmpPubSetAac( _pConext, audioSpecCfg, sizeof(audioSpecCfg) );
-        nIsFirst = 0;
+        RtmpPubSetAudioTimebase( _pConext->pPubCtx, _nPresentationTime );
+        RtmpPubSetAac( _pConext->pPubCtx, audioSpecCfg, sizeof(audioSpecCfg) );
+        _pConext->nAudioRestart = 0;
     }
     memset( adts, 0, sizeof(adts) );
     ret = AacDecodeAdts( _pData, _nSize, adts, &nSize );
@@ -192,7 +205,7 @@ int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
         pAdts++;
     }
 
-    ret = RtmpPubSendAudioFrame( _pConext, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
+    ret = RtmpPubSendAudioFrame( _pConext->pPubCtx, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
     if ( ret < 0 ) {
         LOGE("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
         goto err;
@@ -206,18 +219,21 @@ err:
 }
 
 
-int RtmpConnect( RtmpPubContext * _pConext)
+int RtmpConnect( RtmpContex * _pConext)
 {
-    return (RtmpPubConnect(_pConext) );
+    return (RtmpPubConnect(_pConext->pPubCtx) );
 }
 
-int RtmpDestroy( RtmpPubContext * _pConext )
+int RtmpDestroy( RtmpContex * _pConext )
 {
     if ( !_pConext ) {
+        LOGE("check param error\n");
         return -1;
     }
 
-    RtmpPubDel( _pConext );
+    if ( _pConext->pPubCtx)
+    RtmpPubDel( _pConext->pPubCtx );
+    free( _pConext );
 
     return 0;
 }

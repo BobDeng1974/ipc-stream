@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 12:51:41
+// Last Update:2018-12-27 15:03:23
 /**
  * @file queue.c
  * @brief 
@@ -68,7 +68,6 @@ void DestroyMessageQueue(MessageQueue** _pQueue)
 
 void SendMessage(MessageQueue* _pQueue, Message* _pMessage)
 {
-    LOGI("_pQueue = %p\n", _pQueue );
         if (_pQueue == NULL) {
             LOGI("return\n");
                 return;
@@ -126,13 +125,11 @@ Message* ReceiveMessage(MessageQueue* _pQueue)
         _pQueue->nSize--;
         pthread_mutex_unlock(&_pQueue->mutex);
         pthread_mutex_unlock(&_pQueue->destroyMutex);
-        LOGI("pMessage->message = %s\n", (char *) pMessage->pMessage );
         return pMessage;
 }
 
 Message* ReceiveMessageTimeout(MessageQueue* _pQueue, int _nMilliSec)
 {
-    LOGI("_pQueue = %p\n", _pQueue );
         if (_pQueue == NULL) {
             LOGI("_pQueue is null\n");
                 return NULL;
@@ -154,7 +151,6 @@ Message* ReceiveMessageTimeout(MessageQueue* _pQueue, int _nMilliSec)
                 //DBG_LOG("ReceiveMessageTimeout %lld %d \n", after.tv_nsec, after.tv_sec);
                 int nReason = pthread_cond_timedwait(&_pQueue->consumerCond, &_pQueue->mutex, &after);
                 if (!_pQueue->bIsValid) {
-                    LOGI("return null\n");
                         pthread_mutex_unlock(&_pQueue->mutex);
                         pthread_mutex_unlock(&_pQueue->destroyMutex);
                         return NULL;
@@ -163,7 +159,6 @@ Message* ReceiveMessageTimeout(MessageQueue* _pQueue, int _nMilliSec)
                         //DBG_LOG("ReceiveMessageTimeout %lld %d \n", nsec, sec);
                         pthread_mutex_unlock(&_pQueue->mutex);
                         pthread_mutex_unlock(&_pQueue->destroyMutex);
-                        LOGI("return null\n");
                         return NULL;
                 }
         }

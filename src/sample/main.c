@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 14:56:08
+// Last Update:2018-12-27 16:08:45
 /**
  * @file main.c
  * @brief 
@@ -39,7 +39,7 @@ typedef struct {
     int nPort;
     int nStreamSts;
     MqttContex *pMqttContex;
-    RtmpPubContext *pContext;
+    RtmpContex *pContext;
     pthread_mutex_t mutex;
     CoreDevice *pDev;
 } app_t;
@@ -118,6 +118,7 @@ int RtmpReconnect()
         return -1;
     }
 
+    LOGI("reconnect OK\n");
     return 0;
 }
 
@@ -128,6 +129,13 @@ int VideoFrameCallBack ( char *_pFrame,
                    int streamno )
 {
     int ret = 0;
+    static int i = 0;
+
+    if ( i == 200 ) {
+        LOGI("%s called\n", __FUNCTION__ );
+        i = 0;
+    }
+    i++;
 
     if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
         return 0;
@@ -136,14 +144,14 @@ int VideoFrameCallBack ( char *_pFrame,
     pthread_mutex_lock( &app.mutex );
     ret = RtmpSendVideo( app.pContext, _pFrame, _nLen, _nIskey, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
-        static int i = 0;
+        static int j = 0;
 
         RtmpReconnect();
-        if ( i == 100 ) {
+        if ( j == 50 ) {
             LOGE("RtmpSendVideo error\n");
-            i = 0;
+            j = 0;
         } 
-        i++;
+        j++;
     }
     pthread_mutex_unlock( &app.mutex );
 
@@ -155,6 +163,14 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
                      unsigned long _nFrameIndex, int streamno )
 {
     int ret = 0;
+    static int i = 0;
+
+
+    if ( i == 300 ) {
+        LOGI("%s called\n", __FUNCTION__ );
+        i = 0;
+    }
+    i++;
 
     if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
         return 0;
@@ -184,9 +200,7 @@ void EventLoop()
     int ret = 0;
     char *resp = "pushSucceed";
 
-    LOGI("before LinkRecvIOCtrl app.pMqttContex->nSession = %d\n", app.pMqttContex->nSession );
     ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 6000 );
-    LOGI("after LinkRecvIOCtrl, ret = %d\n", ret );
     if ( ret == MQTT_SUCCESS ) {
         LOGI("message = %s\n", message );
         nSignal = GetMqttSignal( message );
@@ -199,7 +213,6 @@ void EventLoop()
                 //app.pDev->startStream( STREAM_MAIN );
                 ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
                 LOGI("ret = %d\n", ret );
-                LOGI("set app stream running\n");
             }
             break;
         case pushLiveStop:
@@ -208,7 +221,6 @@ void EventLoop()
                 app.nStreamSts = STREAM_STATUS_STOPED;
                 /* if network disconnect, call app.pDev->stopStream() will block */
                 //app.pDev->stopStream();
-                LOGI("after app.pDev->stopStream\n");
             }
             break;
         case pushSucceed:

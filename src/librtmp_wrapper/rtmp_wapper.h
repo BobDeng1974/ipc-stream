@@ -1,4 +1,4 @@
-// Last Update:2018-12-16 22:16:11
+// Last Update:2018-12-27 16:04:43
 /**
  * @file rtmp_wapper.h
  * @brief 
@@ -13,15 +13,21 @@
 
 #include "rtmp_publish.h"
 
-extern RtmpPubContext * RtmpNewContext( const char * _url, unsigned int _nTimeout,
+typedef struct {
+    RtmpPubContext *pPubCtx;
+    int nVideoRestart;
+    int nAudioRestart;
+} RtmpContex;
+
+extern RtmpContex * RtmpNewContext( const char * _url, unsigned int _nTimeout,
                                  RtmpPubAudioType _nInputAudioType,
                                  RtmpPubAudioType _nOutputAudioType,
                                  RtmpPubTimeStampPolicy _nTimePolic);
-extern int RtmpConnect( RtmpPubContext * _pConext);
-extern int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
+extern int RtmpConnect( RtmpContex * _pConext);
+extern int RtmpSendAudio( RtmpContex *_pConext, char *_pData,
                    unsigned int _nSize, unsigned int _nPresentationTime );
-extern int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
+extern int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
                    unsigned int _nSize, int _nIsKey, unsigned int _nPresentationTime );
-extern int RtmpDestroy( RtmpPubContext * _pConext );
+extern int RtmpDestroy( RtmpContex * _pConext );
 
 #endif  /*RTMP_WAPPER_H*/
