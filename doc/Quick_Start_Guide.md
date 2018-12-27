@@ -30,7 +30,7 @@ RTMP推流SDK是七牛推出的适用于ipc的SDK，提供了RTMP推流和MQTT�
 	- 编译之后会生成三个静态库：libfdk-aac.a librtmp.a librtmp_sdk.a
 - 移植wolfmqtt
    - cd wolfMQTT
-   - /configure --prefix=$PWD/output --host=arm-linux-gnueabihf CC=arm-linux-gnueabihf-gcc CPP=arm-linux-gnueabihf-cpp  --enable-tls=no --enable-static ( arm-linux-gnueabihf要替换成自己的交叉编译工具链 )
+   - ./configure --prefix=$PWD/output --host=arm-linux-gnueabihf CC=arm-linux-gnueabihf-gcc CPP=arm-linux-gnueabihf-cpp  --enable-tls=no --enable-static ( arm-linux-gnueabihf要替换成自己的交叉编译工具链 )
    - make && make install
    - 在output目录下会生成libwolfmqtt.a
 
