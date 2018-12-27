@@ -32,9 +32,11 @@ void OnIOCtrlMessage(IN const void* _pInstance, IN int _nAccountId, IN const cha
                 free(pMessage);
                 return;
         }
+        LOGI("_pMessage = %s\n", _pMessage );
         memset(message, 0, nLength);
         memcpy(message, _pMessage, nLength);
         pMessage->pMessage = message;
+        LOGI("pMessage->nMessageID = %d\n", pMessage->nMessageID );
         SendMessage(Session[pMessage->nMessageID].pQueue, pMessage);
 }
 

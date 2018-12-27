@@ -201,9 +201,11 @@ static int OnMessageCallback(struct _MqttClient *client, MqttMessage *_pMessage,
                 memcpy(pInstance->mosq->message, _pMessage->buffer, min((MAX_MQTT_MESSAGE_LEN - 1), _pMessage->buffer_len));
                 LOGI("topic %s \n", pInstance->mosq->message_topic);
                 if (memcmp(pInstance->mosq->message_topic, IO_CTR_MESSAGE, IO_CTR_MESSAGE_LENGTH) == 0) {
+                    LOGI("call OnIOCtrlMessage\n");
                         OnIOCtrlMessage(pInstance, pInstance->options.nAccountId, pInstance->mosq->message_topic,
                                         (const char *)pInstance->mosq->message, min((MAX_MQTT_MESSAGE_LEN - 1), _pMessage->buffer_len));
                 } else {
+                    LOGI("else\n");
                         pInstance->options.callbacks.OnMessage(pInstance, pInstance->options.nAccountId, pInstance->mosq->message_topic,
                                (const char *)pInstance->mosq->message, min((MAX_MQTT_MESSAGE_LEN - 1), _pMessage->buffer_len));
                 }

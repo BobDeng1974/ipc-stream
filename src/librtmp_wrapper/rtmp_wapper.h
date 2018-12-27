@@ -22,5 +22,6 @@ extern int RtmpSendAudio( RtmpPubContext *_pConext, char *_pData,
                    unsigned int _nSize, unsigned int _nPresentationTime );
 extern int RtmpSendVideo( RtmpPubContext *_pConext, char *_pData,
                    unsigned int _nSize, int _nIsKey, unsigned int _nPresentationTime );
+extern int RtmpDestroy( RtmpPubContext * _pConext );
 
 #endif  /*RTMP_WAPPER_H*/

@@ -1,4 +1,4 @@
-// Last Update:2018-12-25 19:11:46
+// Last Update:2018-12-27 14:17:36
 /**
  * @file sig_ctl.c
  * @brief 
@@ -42,6 +42,7 @@ static void OnEvent(const void* _pInstance, int _nAccountId, int _nId,  const ch
 
     if ( _nId == 3000 && mMqttContex ) {
         LOGI("start to subscribe %s \n", mMqttContex->pTopic);
+        LinkDinitIOCtrl( mMqttContex->nSession );
         mMqttContex->nSession = LinkInitIOCtrl( NULL, NULL, _pInstance );
     }
 

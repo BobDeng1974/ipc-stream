@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 11:05:54
+// Last Update:2018-12-27 14:56:08
 /**
  * @file main.c
  * @brief 
@@ -99,6 +99,28 @@ int GetMqttSignal( char *pMqttSignal )
     return -1;
 }
 
+int RtmpReconnect()
+{
+    int ret = 0;
+
+    RtmpDestroy( app.pContext );
+    app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
+                                   app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
+    if ( !app.pContext ) {
+        LOGE("RtmpNewContext() error\n");
+        return -1;
+    }
+
+    /* 3.连接rtmp推流服务器 */
+    ret = RtmpConnect( app.pContext );
+    if ( ret < 0 ) {
+        LOGE("RtmpConnect error\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 /* 6.视频帧回调，摄像头采集到一帧h264图像，调用此回调，调用接口RtmpSendVideo发送视频流 */
 int VideoFrameCallBack ( char *_pFrame, 
                    int _nLen, int _nIskey, double _dTimeStamp, 
@@ -107,11 +129,21 @@ int VideoFrameCallBack ( char *_pFrame,
 {
     int ret = 0;
 
+    if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
+        return 0;
+    }
+
     pthread_mutex_lock( &app.mutex );
     ret = RtmpSendVideo( app.pContext, _pFrame, _nLen, _nIskey, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
-        app.pDev->stopStream();
-        LOGE("RtmpSendVideo error\n");
+        static int i = 0;
+
+        RtmpReconnect();
+        if ( i == 100 ) {
+            LOGE("RtmpSendVideo error\n");
+            i = 0;
+        } 
+        i++;
     }
     pthread_mutex_unlock( &app.mutex );
 
@@ -124,11 +156,21 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
 {
     int ret = 0;
 
+    if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
+        return 0;
+    }
+
     pthread_mutex_lock( &app.mutex );
     ret = RtmpSendAudio( app.pContext, _pFrame, _nLen, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
-        LOGE("RtmpSendAudio error\n");
-        app.pDev->stopStream();
+        static int i = 0;
+
+        if ( i == 100 ) {
+            LOGE("RtmpSendAudio error, errno = %d\n", errno );
+            i = 0;
+        }
+        i++;
+        RtmpReconnect();
     }
     pthread_mutex_unlock( &app.mutex );
     return 0;
@@ -142,7 +184,9 @@ void EventLoop()
     int ret = 0;
     char *resp = "pushSucceed";
 
+    LOGI("before LinkRecvIOCtrl app.pMqttContex->nSession = %d\n", app.pMqttContex->nSession );
     ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 6000 );
+    LOGI("after LinkRecvIOCtrl, ret = %d\n", ret );
     if ( ret == MQTT_SUCCESS ) {
         LOGI("message = %s\n", message );
         nSignal = GetMqttSignal( message );
@@ -151,7 +195,8 @@ void EventLoop()
             if ( app.pDev ) {
 
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
-                app.pDev->startStream( STREAM_MAIN );
+                app.nStreamSts = STREAM_STATUS_RUNNING;
+                //app.pDev->startStream( STREAM_MAIN );
                 ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
                 LOGI("ret = %d\n", ret );
                 LOGI("set app stream running\n");
@@ -160,7 +205,10 @@ void EventLoop()
         case pushLiveStop:
             if ( app.pDev ) {
                 LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
-                app.pDev->stopStream();
+                app.nStreamSts = STREAM_STATUS_STOPED;
+                /* if network disconnect, call app.pDev->stopStream() will block */
+                //app.pDev->stopStream();
+                LOGI("after app.pDev->stopStream\n");
             }
             break;
         case pushSucceed:
@@ -223,6 +271,7 @@ int main()
         return 0;
     }
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
+    app.pDev->startStream( STREAM_MAIN );
 
     for (;;) {
         char memUsed[16] = { 0 };

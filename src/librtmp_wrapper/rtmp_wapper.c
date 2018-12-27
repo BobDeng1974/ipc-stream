@@ -1,4 +1,4 @@
-// Last Update:2018-12-26 17:19:15
+// Last Update:2018-12-27 14:34:24
 /**
  * @file rtmp_wapper.c
  * @brief 
@@ -209,5 +209,16 @@ err:
 int RtmpConnect( RtmpPubContext * _pConext)
 {
     return (RtmpPubConnect(_pConext) );
+}
+
+int RtmpDestroy( RtmpPubContext * _pConext )
+{
+    if ( !_pConext ) {
+        return -1;
+    }
+
+    RtmpPubDel( _pConext );
+
+    return 0;
 }
 
