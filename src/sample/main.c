@@ -71,7 +71,7 @@ enum {
 
 static app_t app = 
 {
-    .pUrl = "rtmp://pili-publish.caster.test.cloudvdn.com/caster-test/test18",
+    .pUrl = "",
     .nTimeout = 10,
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
