@@ -53,7 +53,10 @@ RTMP推流SDK是七牛推出的适用于ipc的SDK，提供了RTMP推流和MQTT�
 	- devices目录下是所有ipc设备存放的目录，sample中使用原始的h264和aac文件模拟出了一个ipc：ipc_simulator.c
 - 整体的RTMP推流流程可以参照main.c
 
-## 3.2  RTMP推流开发流程
+## 3.2 流程图
+![Aaron Swartz](https://raw.githubusercontent.com/felix-001/ipc-stream/master/doc/Untitled%20Diagram-Page-1.png)
+
+## 3.3  RTMP推流开发流程
 首先进行必要的初始化，接下来等待信令，接收到推流开始的信令后，开始推流。接收到推流停止的信令，结束推流。
 
 
