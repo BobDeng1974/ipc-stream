@@ -3,3 +3,8 @@
 	url = https://github.com/pili-engineering/ipcam_sdk
 	branch = master
     ignore = dirty
+[submodule "third_party/link-c-sdk"]
+	path = third_party/link-c-sdk
+	url = https://github.com/qiniu/link-c-sdk
+	branch = dev
+    ignore = dirty
