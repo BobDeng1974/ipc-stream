@@ -1,4 +1,4 @@
-// Last Update:2019-01-24 20:33:28
+// Last Update:2019-01-24 20:47:05
 /**
  * @file main.c
  * @brief 
@@ -199,6 +199,7 @@ void EventLoop()
     int ret = 0;
     char *resp = "pushSucceed";
 
+    // 8. 等待mqtt信令
     ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 6000 );
     if ( ret == MQTT_SUCCESS ) {
         LOGI("message = %s\n", message );
@@ -210,6 +211,7 @@ void EventLoop()
                 LOGI("get signal pushLiveStart, start to push rtmp stream\n");
                 app.nStreamSts = STREAM_STATUS_RUNNING;
                 //app.pDev->startStream( STREAM_MAIN );
+                // 9. 发送response
                 ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
                 LOGI("ret = %d\n", ret );
             }
