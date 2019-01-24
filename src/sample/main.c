@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 16:08:48
+// Last Update:2019-01-24 20:33:28
 /**
  * @file main.c
  * @brief 
@@ -71,12 +71,12 @@ enum {
 
 static app_t app = 
 {
-    .pUrl = "",
+    .pUrl = NULL,
     .nTimeout = 10,
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
-    .pClientId = "ipc-rtmp-mqtt-208",
+    .pClientId = "ipc-rtmp-mqtt-208-2",
     .nQos = 2,
     .pUserName = NULL,
     .pPasswd = NULL,
@@ -130,7 +130,7 @@ int VideoFrameCallBack ( char *_pFrame,
     int ret = 0;
     static int i = 0;
 
-    if ( i == 200 ) {
+    if ( i == 2000 ) {
         LOGI("%s called\n", __FUNCTION__ );
         i = 0;
     }
@@ -165,7 +165,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     static int i = 0;
 
 
-    if ( i == 300 ) {
+    if ( i == 2000 ) {
         LOGI("%s called\n", __FUNCTION__ );
         i = 0;
     }
@@ -239,9 +239,18 @@ void SdkLogCallBack( char *log )
     LOGI( log );
 }
 
-int main()
+int main( int argc , char *argv[] )
 {
     int ret = 0;
+
+    if ( !argv[1] ) {
+        printf("please input push url address\n");
+        printf("%s <url>\n", argv[0] );
+        printf("eg: %s http://www.google.com\n", argv[0] );
+        return 0;
+    }
+
+    app.pUrl = argv[1];
 
     app.nStreamSts = STREAM_STATUS_STOPED;
 
@@ -292,7 +301,7 @@ int main()
         EventLoop();
 
         DbgGetMemUsed( memUsed );
-        if ( count == 16 ) {
+        if ( count == 300 ) {
             count = 0;
             LOGI("memory used : %s\n", memUsed );
         }
