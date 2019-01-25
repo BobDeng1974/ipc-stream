@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 17:51:07
+// Last Update:2019-01-25 18:57:57
 /**
  * @file main.c
  * @brief 
@@ -22,7 +22,7 @@ typedef struct {
 } MqttSignal;
 
 typedef struct {
-    char *pUrl;
+    char url[512];
     int nTimeout;
     int nInputAudioType;
     int nOutputAudioType;
@@ -33,6 +33,7 @@ typedef struct {
     char *pPasswd;
     char *pTopic;
     char *pHost;
+    char *pCfgPath;
     int nPort;
     int nStreamSts;
     MqttContex *pMqttContex;
@@ -68,7 +69,6 @@ enum {
 
 static app_t app = 
 {
-    .pUrl = NULL,
     .nTimeout = 10,
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
@@ -80,6 +80,7 @@ static app_t app =
     .pTopic = "pushLive",
     .pHost = "emqx.qnservice.com",
     .nPort = 1883,
+    .pCfgPath = "/tmp/oem/app/ipc-rtmp.conf"
 };
 
 int GetMqttSignal( char *pMqttSignal )
@@ -101,7 +102,7 @@ int RtmpReconnect()
     int ret = 0;
 
     RtmpDestroy( app.pContext );
-    app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
+    app.pContext = RtmpNewContext( app.url, app.nTimeout,
                                    app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
     if ( !app.pContext ) {
         LOGE("RtmpNewContext() error\n");
@@ -127,7 +128,7 @@ int VideoFrameCallBack ( char *_pFrame,
     int ret = 0;
     static int i = 0;
 
-    if ( i == 2000 ) {
+    if ( i == 5000 ) {
         LOGI("%s called\n", __FUNCTION__ );
         i = 0;
     }
@@ -162,7 +163,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     static int i = 0;
 
 
-    if ( i == 2000 ) {
+    if ( i == 5000 ) {
         LOGI("%s called\n", __FUNCTION__ );
         i = 0;
     }
@@ -230,22 +231,38 @@ void EventLoop()
     } 
 }
 
+int LoadPushUrl()
+{
+    FILE *fp = fopen( app.pCfgPath, "r" );
+    int size = 0;
+
+    if ( !fp ) {
+        LOGE("open file %s error\n", app.pCfgPath );
+        return -1;
+    }
+
+    fseek( fp, 0L, SEEK_END );
+    size = ftell(fp);
+    if ( size == 0 ) {
+        LOGE("file %s no url\n", app.pCfgPath );
+        return -1;
+    }
+    rewind( fp );
+    fread( app.url, 1, size-1, fp );// delete \n
+    LOGE("url = %s\n", app.url );
+    fclose( fp );
+
+    return 0;
+}
+
 int main( int argc , char *argv[] )
 {
     int ret = 0;
 
-    if ( !argv[1] ) {
-        printf("please input push url address\n");
-        printf("%s <url>\n", argv[0] );
-        printf("eg: %s http://www.google.com\n", argv[0] );
-        return 0;
-    }
-
-    app.pUrl = argv[1];
-
     app.nStreamSts = STREAM_STATUS_STOPED;
 
-    LoggerInit( 1, OUTPUT_CONSOLE, "/tmp/ipc-rtmp-stream.log", 1 );
+    LoggerInit( 1, OUTPUT_FILE, "/tmp/ipc-rtmp-stream.log", 1 );
+    LoadPushUrl();
 
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");
@@ -259,7 +276,7 @@ int main( int argc , char *argv[] )
     /* 2.初始化rtmp推流 */
     LOGI("init rtmp lib\n");
     pthread_mutex_init( &app.mutex, NULL );
-    app.pContext = RtmpNewContext( app.pUrl, app.nTimeout,
+    app.pContext = RtmpNewContext( app.url, app.nTimeout,
                                    app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
     if ( !app.pContext ) {
         LOGE("RtmpNewContext() error\n");
