@@ -1,4 +1,4 @@
-// Last Update:2019-01-24 20:47:05
+// Last Update:2019-01-25 15:13:05
 /**
  * @file main.c
  * @brief 
@@ -11,13 +11,10 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
-#include "log.h"
 #include "dbg.h"
 #include "dev_core.h"
 #include "rtmp_wapper.h"
 #include "sig_ctl.h"
-#include "mqtt.h"
-#include "control.h"
 
 typedef struct {
     char *pSignal;
@@ -31,7 +28,7 @@ typedef struct {
     int nOutputAudioType;
     int nTimePolic;
     char *pClientId;
-    MqttQoS nQos;
+    int nQos;
     char *pUserName;
     char *pPasswd;
     char *pTopic;
@@ -194,14 +191,13 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
 void EventLoop()
 {
     char message[1000] = { 0 };
-    unsigned int nIOCtrlType = 0;
     int nSize = 1000, nSignal = 0;
     int ret = 0;
     char *resp = "pushSucceed";
 
     // 8. 等待mqtt信令
-    ret = LinkRecvIOCtrl( app.pMqttContex->nSession, &nIOCtrlType, message, &nSize, 6000 );
-    if ( ret == MQTT_SUCCESS ) {
+    ret = MqttRecv( app.pMqttContex, message, &nSize );
+    if ( ret == 0 ) {
         LOGI("message = %s\n", message );
         nSignal = GetMqttSignal( message );
         switch( nSignal ) {
@@ -212,7 +208,7 @@ void EventLoop()
                 app.nStreamSts = STREAM_STATUS_RUNNING;
                 //app.pDev->startStream( STREAM_MAIN );
                 // 9. 发送response
-                ret = LinkSendIOResponse( app.pMqttContex->nSession, 0, resp, strlen(resp) );
+                ret = MqttSend( app.pMqttContex, resp );
                 LOGI("ret = %d\n", ret );
             }
             break;
@@ -231,14 +227,7 @@ void EventLoop()
             break;
         }
 
-    } else if ( ret != MQTT_RETRY  && ret != MQTT_ERR_INVAL ){
-        LOGI("ret = %d\n", ret );
-    }
-}
-
-void SdkLogCallBack( char *log )
-{
-    LOGI( log );
+    } 
 }
 
 int main( int argc , char *argv[] )
@@ -256,13 +245,12 @@ int main( int argc , char *argv[] )
 
     app.nStreamSts = STREAM_STATUS_STOPED;
 
-    SetLogCallBack( SdkLogCallBack );
     LoggerInit( 1, OUTPUT_FILE, "/tmp/ipc-rtmp-stream.log", 1 );
 
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt\n");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
-                                     app.pTopic, app.pHost, app.nPort, NULL ) ;
+                                     app.pTopic, app.pHost, app.nPort ) ;
     if ( !app.pMqttContex ) {
         LOGE("MqttNewContex error\n");
         return 0;

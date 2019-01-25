@@ -2,7 +2,7 @@
 /**
  * @file func_trace.c
  * @brief 
- * @author liyq
+ * @author felix
  * @version 0.1.00
  * @date 2018-12-20
  */
