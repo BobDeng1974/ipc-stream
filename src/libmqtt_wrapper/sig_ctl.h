@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 14:58:06
+// Last Update:2019-01-25 17:21:42
 /**
  * @file sig_ctl.h
  * @brief 
@@ -15,10 +15,13 @@
 
 typedef struct {
     void *pInstance;
+    void *pubInstance;
     char *pTopic;
+    int connected;
     Queue *q;
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
+    Queue *pubQ;
+    pthread_mutex_t pubMutex;
+    pthread_cond_t pubCond;
 } MqttContex;
 
 extern MqttContex * MqttNewContex( char *_pClientId, int _nQos, char *_pUserName,

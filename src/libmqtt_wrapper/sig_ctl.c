@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 15:04:09
+// Last Update:2019-01-25 17:33:59
 /**
  * @file sig_ctl.c
  * @brief 
@@ -23,6 +23,7 @@
 #include "control.h"
 #include "queue.h"
 
+#define MAX_RETRY 5
 static MqttContex *mMqttContex;
 
 static void OnMessage( const void* _pInstance, int _nAccountId, const char* _pTopic,
@@ -52,12 +53,51 @@ static void OnEvent(const void* _pInstance, int _nAccountId, int _nId,  const ch
 
     LOGI(" id %d reason %s \n", _nId, _pReason );
     if ( _nId == MQTT_SUCCESS && mMqttContex ) {
-        if ( mMqttContex && mMqttContex->pInstance && mMqttContex->pTopic
-             && _pInstance == mMqttContex->pInstance )
+        if (  mMqttContex->pInstance && mMqttContex->pTopic
+             && _pInstance == mMqttContex->pInstance ) {
             LOGI("instance : %p start to subscribe %s \n", _pInstance, mMqttContex->pTopic);
             LinkMqttSubscribe( mMqttContex->pInstance, mMqttContex->pTopic );
+        } else if ( mMqttContex->pubInstance && mMqttContex->pubInstance == _pInstance ) {
+            LOGI("mqtt publish connected\n");
+            mMqttContex->connected = 1;
+        }
     }
 
+}
+
+void *MqttMonitoringTask( void *arg )
+{
+    MqttContex *pContex = (MqttContex *)arg;
+
+    if ( !pContex ) {
+        LOGE("check param error\n");
+        return NULL;
+    }
+
+    for (;;) {
+        pthread_mutex_lock( &pContex->pubMutex );
+        LOGI("wait for cond\n");
+        pthread_cond_wait( &pContex->pubCond, &pContex->pubMutex );
+
+        if ( pContex->pubQ && pContex->connected ) {
+            char message[128] = { 0 };
+            int len = 0;
+
+            pContex->pubQ->dequeue( pContex->pubQ, message, &len );
+            if ( pContex->pubInstance && len ) {
+                LOGI("publish %s : %s \n", pContex->pTopic, message );
+                LinkMqttPublish( pContex->pubInstance, pContex->pTopic, 10, message );
+            } else {
+                LOGE("check instance or len error\n");
+            }
+        } else {
+            LOGE("pubQ is NULL\n");
+        }
+
+        pthread_mutex_unlock( &pContex->pubMutex );
+    }
+
+    return NULL;
 }
 
 MqttContex * MqttNewContex( char *_pClientId, int qos, char *_pUserName,
@@ -81,8 +121,8 @@ MqttContex * MqttNewContex( char *_pClientId, int qos, char *_pUserName,
         return NULL;
     }
 
-    pthread_mutex_init( &pContex->mutex, NULL );
-    pthread_cond_init( &pContex->cond, NULL );
+    pthread_mutex_init( &pContex->pubMutex, NULL );
+    pthread_cond_init( &pContex->pubCond, NULL );
 
     memset( pContex, 0, sizeof(MqttContex) );
     pContex->pTopic = _pTopic;
@@ -107,13 +147,40 @@ MqttContex * MqttNewContex( char *_pClientId, int qos, char *_pUserName,
         goto err;
     }
 
+    char clientId[64] = { 0 };
+
+    sprintf( clientId, "%s-publish", _pClientId );
+    ops->pId = clientId;
+    pContex->pubInstance = LinkMqttCreateInstance( ops );
+    if ( !pContex->pubInstance ) {
+        LOGE("LinkMqttCreateInstance error\n");
+        goto err;
+    }
+
     pContex->q = NewQueue();
     if ( !pContex->q ) {
         LOGE("new queue error\n");
         goto err;
     }
 
+    pContex->pubQ = NewQueue();
+    if ( !pContex->pubQ ) {
+        LOGE("new queue error\n");
+        goto err;
+    }
+
     mMqttContex = pContex;
+
+    int retry = 0;
+    for ( retry = 0; retry < MAX_RETRY; retry ++ ) {
+        if ( !pContex->connected ) {
+            sleep( 1 );
+        }
+    }
+
+    pthread_t thread;
+    pthread_create( &thread, NULL, MqttMonitoringTask, pContex );
+
     return pContex;
 
 err:
@@ -155,7 +222,12 @@ int MqttSend( MqttContex *_pConext, char *_pMessage )
         return -1;
     }
 
-    LinkMqttPublish( pContex->pInstance, pContex->pTopic, 10, _pMessage );
+    if ( pContex->pubQ ) {
+        pContex->pubQ->enqueue( pContex->pubQ, _pMessage, strlen(_pMessage) );
+        pthread_mutex_lock( &pContex->pubMutex );
+        pthread_cond_signal( &pContex->pubCond );
+        pthread_mutex_unlock( &pContex->pubMutex );
+    }
 
     return 0;
 }
