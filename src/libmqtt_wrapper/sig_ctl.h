@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 17:21:42
+// Last Update:2019-01-25 17:48:25
 /**
  * @file sig_ctl.h
  * @brief 
@@ -15,7 +15,6 @@
 
 typedef struct {
     void *pInstance;
-    void *pubInstance;
     char *pTopic;
     int connected;
     Queue *q;

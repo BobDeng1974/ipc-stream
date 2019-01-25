@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 17:33:59
+// Last Update:2019-01-25 18:11:30
 /**
  * @file sig_ctl.c
  * @brief 
@@ -57,10 +57,8 @@ static void OnEvent(const void* _pInstance, int _nAccountId, int _nId,  const ch
              && _pInstance == mMqttContex->pInstance ) {
             LOGI("instance : %p start to subscribe %s \n", _pInstance, mMqttContex->pTopic);
             LinkMqttSubscribe( mMqttContex->pInstance, mMqttContex->pTopic );
-        } else if ( mMqttContex->pubInstance && mMqttContex->pubInstance == _pInstance ) {
-            LOGI("mqtt publish connected\n");
             mMqttContex->connected = 1;
-        }
+        } 
     }
 
 }
@@ -84,9 +82,9 @@ void *MqttMonitoringTask( void *arg )
             int len = 0;
 
             pContex->pubQ->dequeue( pContex->pubQ, message, &len );
-            if ( pContex->pubInstance && len ) {
-                LOGI("publish %s : %s \n", pContex->pTopic, message );
-                LinkMqttPublish( pContex->pubInstance, pContex->pTopic, 10, message );
+            if ( pContex->pInstance && len ) {
+                LOGI("publish topic : %s msg : %s \n", pContex->pTopic, message );
+                LinkMqttPublish( pContex->pInstance, pContex->pTopic, strlen(message), message );
             } else {
                 LOGE("check instance or len error\n");
             }
@@ -148,14 +146,6 @@ MqttContex * MqttNewContex( char *_pClientId, int qos, char *_pUserName,
     }
 
     char clientId[64] = { 0 };
-
-    sprintf( clientId, "%s-publish", _pClientId );
-    ops->pId = clientId;
-    pContex->pubInstance = LinkMqttCreateInstance( ops );
-    if ( !pContex->pubInstance ) {
-        LOGE("LinkMqttCreateInstance error\n");
-        goto err;
-    }
 
     pContex->q = NewQueue();
     if ( !pContex->q ) {
