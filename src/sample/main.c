@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 18:57:57
+// Last Update:2019-01-26 17:18:37
 /**
  * @file main.c
  * @brief 
@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
 #include "dbg.h"
@@ -34,6 +35,8 @@ typedef struct {
     char *pTopic;
     char *pHost;
     char *pCfgPath;
+    char *cache;
+    int nCacheLen;
     int nPort;
     int nStreamSts;
     MqttContex *pMqttContex;
@@ -136,6 +139,15 @@ int VideoFrameCallBack ( char *_pFrame,
 
     if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
         return 0;
+    }
+
+    if ( i > 5 && !_nIskey ) {
+        app.cache = (char *)malloc( _nLen );
+        if ( !app.cache ) {
+            LOGE("malloc error\n");
+        }
+        memcpy( app.cache, _pFrame, _nLen );
+        app.nCacheLen = _nLen;
     }
 
     pthread_mutex_lock( &app.mutex );
@@ -255,6 +267,28 @@ int LoadPushUrl()
     return 0;
 }
 
+/*
+ * the mqtt server will close socket connection if no data coming in 30s
+ * so we need to send heart beat packet to server
+ * */
+void *HeartBeatTask( void *arg )
+{
+    int ret = 0;
+
+    for (;;) {
+        if ( app.cache && app.nStreamSts == STREAM_STATUS_STOPED ) {
+            ret = RtmpSendVideo( app.pContext, app.cache, app.nCacheLen, 0, 123456 );
+            if ( ret < 0 ) {
+                LOGE("send heart beatt error\n");
+            }
+            sleep( 20 );
+        } else {
+            sleep( 2 );
+        }
+    }
+    return NULL;
+}
+
 int main( int argc , char *argv[] )
 {
     int ret = 0;
@@ -299,6 +333,9 @@ int main( int argc , char *argv[] )
     }
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
     app.pDev->startStream( STREAM_MAIN );
+
+    pthread_t thread;
+    pthread_create( &thread, NULL, HeartBeatTask, NULL );
 
     for (;;) {
         char memUsed[16] = { 0 };
