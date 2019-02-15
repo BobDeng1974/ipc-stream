@@ -36,7 +36,7 @@ librtmp的API文档参照：[IpCam_SDK_API](IpCam_SDK_API.md)
 ## 3.2 参考流程图
 ![Aaron Swartz](RtmpFlowChat.png)
 
-# 4 sample介绍
+# 4. sample介绍
 - hal目录是对ipc的抽象，将ipc的能力抽象出一个通用的函数操作集。用于支持多个ipc厂商的设备，一个新的ipc厂商如果想让自己的设备能够工作起来，只需要实现CaptureDevice结构体里面的成员，并注册到dev_core，不需要改动其他的代码，就能够使sample工作起来
 	- CaptureDevice结构体说明
 		- init 摄像头初始化，并注册音频和视频的回调函数
