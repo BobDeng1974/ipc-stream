@@ -24,7 +24,7 @@ libmqtt的API文档参照：[MQTT_SDK_API](MQTT_SDK_API.md)
 
 librtmp的API文档参照：[IpCam_SDK_API](IpCam_SDK_API.md)
 
-# 2 功能模块及版本号
+# 2. 功能模块及版本号
 | 模块 | 描述 | 版本 |
 |---|---|---|
 | libmqtt | MQTT信令模块 | 0.0.1 |
