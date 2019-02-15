@@ -6,6 +6,9 @@
 
 本文档主要指导用户基于七牛mqtt和rtmp推流库快速实现可控的RTMP推流。
 
+libmqtt的API文档参照：[MQTT_SDK_API](MQTT_SDK_API.md)
+librtmp的API文档参照：[IpCam_SDK_APIl](IpCam_SDK_API.md)
+
 # 2 功能模块及版本号
 | 模块 | 描述 | 版本 |
 |---|---|---|
@@ -20,7 +23,10 @@
 - 创建MQTT实例，传入mqtt服务器地址，端口，主题等（ **LinkMqttCreateInstance** ）
 - 创建RTMP实例，传入RTMP推流地址，端口，音视频编码参数等（ **RtmpPubNew** ）
 - 初始化摄像头，注册视音频回调函数
+- 设置视频时间基准 （ **RtmpPubSetVideoTimebase** ）
+- 解析视频关键帧，拿到sps，pps，并设置sps，pps( **RtmpPubSetSps/RtmpPubSetPps** )
 - 在视频帧的回调里面，发送RTMP流( **RtmpPubSendVideoKeyframe/RtmpPubSendVideoKeyframe** )
+- 设置音频时间基准（ **RtmpPubSetAudioTimebase** ）
 - 在音频帧的回调里面，发送RTMP流（ **RtmpPubSendAudioFrame** ）
 - 等待信令
 - 收到“开始”信令，启动推流
@@ -43,6 +49,8 @@
 	- 某个具体的ipc填充好CaptureDevice这个结构体之后，调用函数CaptureDeviceRegister注册到dev_core
 	- devices目录下是所有ipc设备存放的目录，sample中使用原始的h264和aac文件模拟出了一个ipc：ipc_simulator.c
 - 整体的RTMP推流流程可以参照main.c
+- libmqtt_wrapper目录是对libmqtt的二次封装，可以作为libmqtt的使用参考
+- librtmp_wrapper目录是对librtmp的二次封装，可以作为librtmp的使用参考
 
 
 
