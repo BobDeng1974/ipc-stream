@@ -27,9 +27,9 @@
 - 收到“暂停”信令，停止推流
 
 ## 3.2 流程图
-![Aaron Swartz](#FlowChat.png)
+![Aaron Swartz](FlowChat.png)
 
-## 3.1 sample介绍
+# 4 sample介绍
 - hal目录是对ipc的抽象，将ipc的能力抽象出一个通用的函数操作集。用于支持多个ipc厂商的设备，一个新的ipc厂商如果想让自己的设备能够工作起来，只需要实现CaptureDevice结构体里面的成员，并注册到dev_core，不需要改动其他的代码，就能够使sample工作起来
 	- CaptureDevice结构体说明
 		- init 摄像头初始化，并注册音频和视频的回调函数
@@ -44,22 +44,6 @@
 	- devices目录下是所有ipc设备存放的目录，sample中使用原始的h264和aac文件模拟出了一个ipc：ipc_simulator.c
 - 整体的RTMP推流流程可以参照main.c
 
-## 3.2 流程图
-![Aaron Swartz](https://raw.githubusercontent.com/felix-001/ipc-stream/master/doc/FlowChat.png)
 
-## 3.3  RTMP推流开发流程
-首先进行必要的初始化，接下来等待信令，接收到推流开始的信令后，开始推流。接收到推流停止的信令，结束推流。
-
-- 初始化 
-
-    - 创建MQTT实例(LinkMqttCreateInstance)
-    - 创建RTMP实例(RtmpNewContext)
-    - 初始化摄像头，注册视音频回调函数
-    
-- 循环等待信令( LinkRecvIOCtrl )
-- 接收到推流开始信令，回复response( LinkSendIOResponse )
-- 启动摄像头的视音频流
-- 在视频帧的回调里面，发送RTMP流( RtmpSendVideo )
-- 在音频帧的回调里面，发送RTMP流（RtmpSendAudio ）
 
 
