@@ -4,41 +4,32 @@
 
 # 1. 概述
 
-RTMP推流SDK是七牛推出的适用于ipc的SDK，提供了RTMP推流和MQTT信令的功能.可以帮助客户快速、高效的开发出安防监控场景的摄像头产品.
+本文档主要指导用户基于七牛mqtt和rtmp推流库快速实现可控的RTMP推流。
 
-## 1.1 功能模块及版本号
+# 2 功能模块及版本号
 | 模块 | 描述 | 版本 |
 |---|---|---|
 | libmqtt | MQTT信令模块 | 0.0.1 |
 | librtmp | RTMP推流模块 | 0.0.1 |
 
-# 2. 开发准备
-
-## 2.1 设备以及系统要求
-- 设备要求：设备端为 支持 H.264/H.265/aac/g711 硬编码的音视频处理芯片
-- 设备系统要求：Linux Kernel >= 3.4
-
-## 2.2 开发环境准备
-- 准备一个 Linux 操作系统 ( Ubuntu 14.04 或更高版本 )；
-- 安装交叉编译工具链；
-- 将 SDK 库文件和头文件加入到工程目录；
-- 安装camke : apt-get instal cmake
-- 移植ipcam_sdk 
-	- git submodule update --init --recursive
-	- cd ipcam_sdk
-	- make CROSS_PREFIX=XXX(交叉编译工具链前缀)
-	- 编译之后会生成三个静态库：libfdk-aac.a librtmp.a librtmp_sdk.a
-- 移植wolfmqtt
-   - cd wolfMQTT
-   - ./configure --prefix=$PWD/output --host=arm-linux-gnueabihf CC=arm-linux-gnueabihf-gcc CPP=arm-linux-gnueabihf-cpp  --enable-tls=no --enable-static ( arm-linux-gnueabihf要替换成自己的交叉编译工具链 )
-   - make && make install
-   - 在output目录下会生成libwolfmqtt.a
-
-
 
 # 3. 快速开始
 
-## 3.1 关于sample
+## 3.1 开发流程
+ 
+- 创建MQTT实例，传入mqtt服务器地址，端口，主题等（ **LinkMqttCreateInstance** ）
+- 创建RTMP实例，传入RTMP推流地址，端口，音视频编码参数等（ **RtmpPubNew** ）
+- 初始化摄像头，注册视音频回调函数
+- 在视频帧的回调里面，发送RTMP流( **RtmpPubSendVideoKeyframe/RtmpPubSendVideoKeyframe** )
+- 在音频帧的回调里面，发送RTMP流（ **RtmpPubSendAudioFrame** ）
+- 等待信令
+- 收到“开始”信令，启动推流
+- 收到“暂停”信令，停止推流
+
+## 3.2 流程图
+![Aaron Swartz](#FlowChat.png)
+
+## 3.1 sample介绍
 - hal目录是对ipc的抽象，将ipc的能力抽象出一个通用的函数操作集。用于支持多个ipc厂商的设备，一个新的ipc厂商如果想让自己的设备能够工作起来，只需要实现CaptureDevice结构体里面的成员，并注册到dev_core，不需要改动其他的代码，就能够使sample工作起来
 	- CaptureDevice结构体说明
 		- init 摄像头初始化，并注册音频和视频的回调函数
@@ -58,7 +49,6 @@ RTMP推流SDK是七牛推出的适用于ipc的SDK，提供了RTMP推流和MQTT�
 
 ## 3.3  RTMP推流开发流程
 首先进行必要的初始化，接下来等待信令，接收到推流开始的信令后，开始推流。接收到推流停止的信令，结束推流。
-
 
 - 初始化 
 
