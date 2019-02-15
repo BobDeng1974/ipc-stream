@@ -33,7 +33,7 @@ librtmp的API文档参照：[IpCam_SDK_API](IpCam_SDK_API.md)
 - 收到“开始”信令，启动推流
 - 收到“暂停”信令，停止推流
 
-## 3.2 流程图
+## 3.2 参考流程图
 ![Aaron Swartz](RtmpFlowChat.png)
 
 # 4 sample介绍
