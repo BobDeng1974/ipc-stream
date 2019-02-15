@@ -53,7 +53,7 @@ librtmp的API文档参照：[IpCam_SDK_API](IpCam_SDK_API.md)
 - libmqtt_wrapper目录是对libmqtt的二次封装，可以作为libmqtt的使用参考
 - librtmp_wrapper目录是对librtmp的二次封装，可以作为librtmp的使用参考
 
-> 注意 ：如果推送的rtmp视音频流有非视音频的数据，比如视频的nalu type既不是0x01也不是0x05，有的播放器无法播放，所以在sample当中对视音频加了过滤的处理，只保留nalu type为0x01和0x05的视频视频数据。音频只保留音频数据
+> 注意 ：如果推送的rtmp视音频流有非视音频的数据，比如视频的nalu type既不是0x01也不是0x05，有的播放器无法播放，所以在sample当中对视音频加了过滤的处理，只保留nalu type为0x01和0x05的视频数据。音频只保留音频数据
 
 
 
