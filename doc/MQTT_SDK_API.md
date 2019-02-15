@@ -105,7 +105,7 @@ int LinkMqttSubscribe(const void* pInstance,
                       );
 ```
 
-### 2.7 取消订阅 MQTT 消息
+## 2.7 取消订阅 MQTT 消息
 
 ```c
 /**
