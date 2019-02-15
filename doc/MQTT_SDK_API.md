@@ -26,9 +26,7 @@
 
 # 2. 接口说明
 
-## 2.1 MQTT消息通道接口
-
-#### 2.1.1 初始化 MQTT SDK
+#### 2.1 初始化 MQTT SDK
 
 ```c
 /**
@@ -39,7 +37,7 @@
 int LinkMqttLibInit();
 ```
 
-#### 2.1.2 注销 MQTT SDK
+#### 2.2 注销 MQTT SDK
 
 ```c
 /**
@@ -50,7 +48,7 @@ int LinkMqttLibInit();
 int LinkMqttLibCleanup();
 ```
 
-#### 2.1.3 创建一个 MQTT 实例
+#### 2.3 创建一个 MQTT 实例
 
 ```c
 /**
@@ -62,7 +60,7 @@ int LinkMqttLibCleanup();
 void * LinkMqttCreateInstance( const MqttOptions* pMqttpOption );
 ```
 
-#### 2.1.4 销毁一个 MQTT 实例
+#### 2.4 销毁一个 MQTT 实例
 
 ```c
 /**
@@ -74,7 +72,7 @@ void * LinkMqttCreateInstance( const MqttOptions* pMqttpOption );
 int LinkMqttDestroyInstance(const void* pInstance);
 ```
 
-#### 2.1.5 上报 MQTT 消息
+#### 2.5 上报 MQTT 消息
 
 ```c
 /**
@@ -93,7 +91,7 @@ int LinkMqttPublish(const void* pInstance,
                     );
 ```
 
-#### 2.1.6 订阅 MQTT 消息
+#### 2.6 订阅 MQTT 消息
 
 ```c
 /**
@@ -108,7 +106,7 @@ int LinkMqttSubscribe(const void* pInstance,
                       );
 ```
 
-#### 2.1.7 取消订阅 MQTT 消息
+#### 2.7 取消订阅 MQTT 消息
 
 ```c
 /**
