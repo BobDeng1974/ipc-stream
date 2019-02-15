@@ -11,7 +11,7 @@
   - [2.4 销毁一个 MQTT 实例](#24-%E9%94%80%E6%AF%81%E4%B8%80%E4%B8%AA-mqtt-%E5%AE%9E%E4%BE%8B)
   - [2.5 上报 MQTT 消息](#25-%E4%B8%8A%E6%8A%A5-mqtt-%E6%B6%88%E6%81%AF)
   - [2.6 订阅 MQTT 消息](#26-%E8%AE%A2%E9%98%85-mqtt-%E6%B6%88%E6%81%AF)
-    - [2.7 取消订阅 MQTT 消息](#27-%E5%8F%96%E6%B6%88%E8%AE%A2%E9%98%85-mqtt-%E6%B6%88%E6%81%AF)
+  - [2.7 取消订阅 MQTT 消息](#27-%E5%8F%96%E6%B6%88%E8%AE%A2%E9%98%85-mqtt-%E6%B6%88%E6%81%AF)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
