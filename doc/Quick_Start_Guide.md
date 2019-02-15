@@ -4,14 +4,11 @@
 
 - [目录 | Quick Start Guide](#%E7%9B%AE%E5%BD%95--quick-start-guide)
 - [1. 概述](#1-%E6%A6%82%E8%BF%B0)
-  - [1.1 功能模块及版本号](#11-%E5%8A%9F%E8%83%BD%E6%A8%A1%E5%9D%97%E5%8F%8A%E7%89%88%E6%9C%AC%E5%8F%B7)
-- [2. 开发准备](#2-%E5%BC%80%E5%8F%91%E5%87%86%E5%A4%87)
-  - [2.1 设备以及系统要求](#21-%E8%AE%BE%E5%A4%87%E4%BB%A5%E5%8F%8A%E7%B3%BB%E7%BB%9F%E8%A6%81%E6%B1%82)
-  - [2.2 开发环境准备](#22-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87)
+- [2 功能模块及版本号](#2-%E5%8A%9F%E8%83%BD%E6%A8%A1%E5%9D%97%E5%8F%8A%E7%89%88%E6%9C%AC%E5%8F%B7)
 - [3. 快速开始](#3-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
-  - [3.1 关于sample](#31-%E5%85%B3%E4%BA%8Esample)
-  - [3.2 流程图](#32-%E6%B5%81%E7%A8%8B%E5%9B%BE)
-  - [3.3  RTMP推流开发流程](#33--rtmp%E6%8E%A8%E6%B5%81%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B)
+  - [3.1 开发流程](#31-%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B)
+  - [3.2 参考流程图](#32-%E5%8F%82%E8%80%83%E6%B5%81%E7%A8%8B%E5%9B%BE)
+- [4. sample介绍](#4-sample%E4%BB%8B%E7%BB%8D)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
