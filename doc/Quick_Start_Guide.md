@@ -4,7 +4,7 @@
 
 # 1. 概述
 
-本文档主要指导用户基于七牛mqtt和rtmp推流库快速实现可控的RTMP推流。
+本文档主要指导用户基于七牛MQTT和RTMP推流库快速实现可控的RTMP推流。
 
 libmqtt的API文档参照：[MQTT_SDK_API](MQTT_SDK_API.md)
 
