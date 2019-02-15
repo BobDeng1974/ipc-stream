@@ -1,3 +1,26 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [目录 | Device SDK Manual](#%E7%9B%AE%E5%BD%95--device-sdk-manual)
+- [1. 概述](#1-%E6%A6%82%E8%BF%B0)
+- [2. 接口说明](#2-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E)
+  - [2.1 MQTT消息通道接口](#21-mqtt%E6%B6%88%E6%81%AF%E9%80%9A%E9%81%93%E6%8E%A5%E5%8F%A3)
+    - [2.1.1 MQTT 返回错误码](#211-mqtt-%E8%BF%94%E5%9B%9E%E9%94%99%E8%AF%AF%E7%A0%81)
+    - [2.2.2 MQTT 主要数据结构](#222-mqtt-%E4%B8%BB%E8%A6%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)
+    - [2.2.3 MQTT 接口说明](#223-mqtt-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E)
+      - [2.2.3.1 初始化 MQTT SDK](#2231-%E5%88%9D%E5%A7%8B%E5%8C%96-mqtt-sdk)
+      - [2.2.3.2 注销 MQTT SDK](#2232-%E6%B3%A8%E9%94%80-mqtt-sdk)
+      - [2.2.3.3 创建一个 MQTT 实例](#2233-%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA-mqtt-%E5%AE%9E%E4%BE%8B)
+      - [2.2.3.4 销毁一个 MQTT 实例](#2234-%E9%94%80%E6%AF%81%E4%B8%80%E4%B8%AA-mqtt-%E5%AE%9E%E4%BE%8B)
+      - [2.2.3.5 上报 MQTT 消息](#2235-%E4%B8%8A%E6%8A%A5-mqtt-%E6%B6%88%E6%81%AF)
+      - [2.2.3.6 订阅 MQTT 消息](#2236-%E8%AE%A2%E9%98%85-mqtt-%E6%B6%88%E6%81%AF)
+      - [2.2.3.7 取消订阅 MQTT 消息](#2237-%E5%8F%96%E6%B6%88%E8%AE%A2%E9%98%85-mqtt-%E6%B6%88%E6%81%AF)
+      - [2.2.3.8 接收信令](#2238-%E6%8E%A5%E6%94%B6%E4%BF%A1%E4%BB%A4)
+      - [2.2.3.9 发送信令](#2239-%E5%8F%91%E9%80%81%E4%BF%A1%E4%BB%A4)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # 目录 | Device SDK Manual
 
 [TOC]
