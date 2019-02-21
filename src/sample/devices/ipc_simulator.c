@@ -1,4 +1,4 @@
-// Last Update:2018-12-18 20:58:00
+// Last Update:2019-02-21 19:10:16
 /**
  * @file sim_dev.c
  * @brief 
@@ -367,7 +367,7 @@ int start_video_file_test(void *opaque)
                  if (nSleepTime > 0) {
                          //printf("sleeptime:%lld\n", nSleepTime);
                          if (nSleepTime > 40 * 1000) {
-                                 LOGI("abnormal time diff:%ld", nSleepTime);
+                                 //LOGI("abnormal time diff:%ld", nSleepTime);
                          }
                          usleep(nSleepTime);
                  }
@@ -466,7 +466,7 @@ int start_audio_file_test(void *opaque)
                 if (nSleepTime > 0) {
                         //printf("sleeptime:%lld\n", nSleepTime);
                         if (nSleepTime > duration * 1000) {
-                                LOGI("abnormal time diff:%ld", nSleepTime);
+                                //LOGI("abnormal time diff:%ld", nSleepTime);
                         }
                         usleep(nSleepTime);
                 }

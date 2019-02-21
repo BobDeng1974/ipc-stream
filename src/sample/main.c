@@ -1,4 +1,4 @@
-// Last Update:2019-01-26 17:18:37
+// Last Update:2019-02-21 19:18:07
 /**
  * @file main.c
  * @brief 
@@ -39,6 +39,8 @@ typedef struct {
     int nCacheLen;
     int nPort;
     int nStreamSts;
+    char *pLogTopic;
+    char *pClientIdLog;
     MqttContex *pMqttContex;
     RtmpContex *pContext;
     pthread_mutex_t mutex;
@@ -76,14 +78,17 @@ static app_t app =
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
-    .pClientId = "ipc-rtmp-mqtt-208-2",
+    .pClientId = "ipc-rtmp-mqtt-208-9",
     .nQos = 2,
     .pUserName = NULL,
     .pPasswd = NULL,
     .pTopic = "pushLive",
     .pHost = "emqx.qnservice.com",
     .nPort = 1883,
-    .pCfgPath = "/tmp/oem/app/ipc-rtmp.conf"
+    .pCfgPath = "/tmp/oem/app/ipc-rtmp.conf",
+    .pLogTopic = "rtmp-stream-208",
+    .pClientIdLog = "rtmp-stream-208",
+    
 };
 
 int GetMqttSignal( char *pMqttSignal )
@@ -108,17 +113,17 @@ int RtmpReconnect()
     app.pContext = RtmpNewContext( app.url, app.nTimeout,
                                    app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
     if ( !app.pContext ) {
-        LOGE("RtmpNewContext() error\n");
+        LOGE("RtmpNewContext() error");
         return -1;
     }
 
     ret = RtmpConnect( app.pContext );
     if ( ret < 0 ) {
-        LOGE("RtmpConnect error\n");
+        LOGE("RtmpConnect error");
         return -1;
     }
 
-    LOGI("reconnect OK\n");
+    LOGI("reconnect OK");
     return 0;
 }
 
@@ -129,10 +134,10 @@ int VideoFrameCallBack ( char *_pFrame,
                    int streamno )
 {
     int ret = 0;
-    static int i = 0;
+    static int i = 0, nIsFirst = 1;
 
     if ( i == 5000 ) {
-        LOGI("%s called\n", __FUNCTION__ );
+        LOGI("%s called", __FUNCTION__ );
         i = 0;
     }
     i++;
@@ -141,13 +146,14 @@ int VideoFrameCallBack ( char *_pFrame,
         return 0;
     }
 
-    if ( i > 5 && !_nIskey ) {
+    if ( i > 5 && !_nIskey && nIsFirst ) {
         app.cache = (char *)malloc( _nLen );
         if ( !app.cache ) {
-            LOGE("malloc error\n");
+            LOGE("malloc error");
         }
         memcpy( app.cache, _pFrame, _nLen );
         app.nCacheLen = _nLen;
+        nIsFirst = 0;
     }
 
     pthread_mutex_lock( &app.mutex );
@@ -157,7 +163,7 @@ int VideoFrameCallBack ( char *_pFrame,
 
         RtmpReconnect();
         if ( j == 50 ) {
-            LOGE("RtmpSendVideo error\n");
+            LOGE("RtmpSendVideo error");
             j = 0;
         } 
         j++;
@@ -176,7 +182,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
 
 
     if ( i == 5000 ) {
-        LOGI("%s called\n", __FUNCTION__ );
+        LOGI("%s called", __FUNCTION__ );
         i = 0;
     }
     i++;
@@ -191,7 +197,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
         static int i = 0;
 
         if ( i == 100 ) {
-            LOGE("RtmpSendAudio error, errno = %d\n", errno );
+            LOGE("RtmpSendAudio error, errno = %d", errno );
             i = 0;
         }
         i++;
@@ -211,30 +217,27 @@ void EventLoop()
     // 8. 等待mqtt信令
     ret = MqttRecv( app.pMqttContex, message, &nSize );
     if ( ret == 0 ) {
-        LOGI("message = %s\n", message );
+        LOGI("message = %s", message );
         nSignal = GetMqttSignal( message );
         switch( nSignal ) {
         case pushLiveStart:
             if ( app.pDev ) {
 
-                LOGI("get signal pushLiveStart, start to push rtmp stream\n");
+                LOGI("get signal pushLiveStart, start to push rtmp stream");
                 app.nStreamSts = STREAM_STATUS_RUNNING;
-                //app.pDev->startStream( STREAM_MAIN );
                 // 9. 发送response
-                ret = MqttSend( app.pMqttContex, resp );
-                LOGI("ret = %d\n", ret );
+                ret = MqttSend( app.pMqttContex, app.pTopic, resp );
+                LOGI("ret = %d", ret );
             }
             break;
         case pushLiveStop:
             if ( app.pDev ) {
-                LOGI("get signal pushLiveStop, stop to push rtmp stream\n");
+                LOGI("get signal pushLiveStop, stop to push rtmp stream");
                 app.nStreamSts = STREAM_STATUS_STOPED;
-                /* if network disconnect, call app.pDev->stopStream() will block */
-                //app.pDev->stopStream();
             }
             break;
         case pushSucceed:
-            LOGI("pushSucceed\n");
+            LOGI("pushSucceed");
             break;
         default:
             break;
@@ -249,19 +252,19 @@ int LoadPushUrl()
     int size = 0;
 
     if ( !fp ) {
-        LOGE("open file %s error\n", app.pCfgPath );
+        LOGE("open file %s error", app.pCfgPath );
         return -1;
     }
 
     fseek( fp, 0L, SEEK_END );
     size = ftell(fp);
     if ( size == 0 ) {
-        LOGE("file %s no url\n", app.pCfgPath );
+        LOGE("file %s no url", app.pCfgPath );
         return -1;
     }
     rewind( fp );
     fread( app.url, 1, size-1, fp );// delete \n
-    LOGE("url = %s\n", app.url );
+    LOGE("url = %s", app.url );
     fclose( fp );
 
     return 0;
@@ -279,7 +282,10 @@ void *HeartBeatTask( void *arg )
         if ( app.cache && app.nStreamSts == STREAM_STATUS_STOPED ) {
             ret = RtmpSendVideo( app.pContext, app.cache, app.nCacheLen, 0, 123456 );
             if ( ret < 0 ) {
-                LOGE("send heart beatt error\n");
+                LOGE("send heart beatt error, ret = %d, reconnect rtmp stream", ret );
+                RtmpReconnect();
+            } else {
+                LOGI("send heart beat packet success");
             }
             sleep( 20 );
         } else {
@@ -289,46 +295,91 @@ void *HeartBeatTask( void *arg )
     return NULL;
 }
 
+int GetMemUsed( char *memUsed )
+{
+    char line[256] = { 0 }, key[32] = { 0 }, value[32] = { 0 };
+    FILE *fp = NULL;
+    char *ret = NULL;
+
+    fp = fopen( "/proc/self/status", "r" );
+    if ( !fp ) {
+        printf("open /proc/self/status error" );
+        return -1;
+    }
+
+    for (;;) {
+        memset( line, 0, sizeof(line) );
+        ret = fgets( line, sizeof(line), fp );
+        if (ret) {
+            sscanf( line, "%s %s", key, value );
+            if (strcmp( key, "VmRSS:" ) == 0 ) {
+                memcpy( memUsed, value, strlen(value) );
+                fclose( fp );
+                return 0;
+            }
+        }
+    }
+
+    fclose( fp );
+    return -1;
+}
+
 int main( int argc , char *argv[] )
 {
     int ret = 0;
+    LogParam param;
+    MqttParam mqtt;
 
     app.nStreamSts = STREAM_STATUS_STOPED;
 
-    LoggerInit( 1, OUTPUT_FILE, "/tmp/ipc-rtmp-stream.log", 1 );
+    memset( &mqtt, 0, sizeof(MqttParam) );
+    memset( &param, 0, sizeof(LogParam) );
+    mqtt.clientId = app.pClientIdLog;
+    mqtt.qos = app.nQos;
+    mqtt.user = app.pUserName;
+    mqtt.passwd = app.pPasswd;
+    mqtt.topic = app.pLogTopic;
+    mqtt.broker = app.pHost;
+    mqtt.port = app.nPort;
+    param.output = OUTPUT_MQTT;
+    param.showTime = 1;
+    param.level = DBG_LEVEL_INFO;
+    param.verbose = 1;
+    param.mqttParam = &mqtt;
+    LoggerInit( &param );
     LoadPushUrl();
 
     /* 1.初始化mqtt信令 */
-    LOGI("init mqtt\n");
+    LOGI("init mqtt");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
                                      app.pTopic, app.pHost, app.nPort ) ;
     if ( !app.pMqttContex ) {
-        LOGE("MqttNewContex error\n");
+        LOGE("MqttNewContex error");
         return 0;
     }
 
     /* 2.初始化rtmp推流 */
-    LOGI("init rtmp lib\n");
+    LOGI("init rtmp lib");
     pthread_mutex_init( &app.mutex, NULL );
     app.pContext = RtmpNewContext( app.url, app.nTimeout,
                                    app.nInputAudioType, app.nOutputAudioType, app.nTimePolic );
     if ( !app.pContext ) {
-        LOGE("RtmpNewContext() error\n");
+        LOGE("RtmpNewContext() error");
         return 0;
     }
 
     /* 3.连接rtmp推流服务器 */
     ret = RtmpConnect( app.pContext );
     if ( ret < 0 ) {
-        LOGE("RtmpConnect error\n");
+        LOGE("RtmpConnect error");
         return 0;
     }
 
     /* 4.初始化网络摄像头，注册视音频帧回调 */
-    LOGI("start to init ipc\n");
+    LOGI("start to init ipc");
     app.pDev = NewCoreDevice();
     if ( !app.pDev ) {
-        LOGE("NewCoreDevice() error\n");
+        LOGE("NewCoreDevice() error");
         return 0;
     }
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
@@ -344,10 +395,10 @@ int main( int argc , char *argv[] )
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
 
-        DbgGetMemUsed( memUsed );
-        if ( count == 300 ) {
+        GetMemUsed( memUsed );
+        if ( count == 30 ) {
             count = 0;
-            LOGI("memory used : %s\n", memUsed );
+            LOGI("memory used : %s", memUsed );
         }
         count++;
     }

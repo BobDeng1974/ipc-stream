@@ -33,7 +33,7 @@ RtmpContex * RtmpNewContext( const char * _url, unsigned int _nTimeout,
 
     ctx = ( RtmpContex *) malloc ( sizeof(RtmpContex) );
     if ( !ctx  ) {
-        LOGE("malloc error\n");
+        LOG_E("malloc error\n");
         return NULL;
     }
 
@@ -63,7 +63,7 @@ int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
     char *pBuf = ( char *)malloc( _nSize ), *pBufAddr = pBuf;
 
     if ( !_pConext || !_pData ) {
-        LOGE("check param error\n");
+        LOG_E("check param error\n");
         if ( pBuf ) {
             free( pBuf );
         }
@@ -71,7 +71,7 @@ int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
     }
 
     if ( !pBuf ) {
-        LOGE("malloc error\n");
+        LOG_E("malloc error\n");
         return -1;
     }
 
@@ -79,12 +79,12 @@ int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
     memset( nalus, 0, sizeof(nalus) );
     ret = H264DecodeFrame( _pData, _nSize, nalus, &size );
     if ( ret != DECODE_OK ) {
-        LOGE("H264DecodeFrame error, ret = %d\n", ret );
+        LOG_E("H264DecodeFrame error, ret = %d\n", ret );
         goto err;
     }
 
     if ( size < 0 ) {
-        LOGE("check size error\n");
+        LOG_E("check size error\n");
         goto err;
     }
 
@@ -114,7 +114,7 @@ int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
                 memcpy( pBuf, pNalu->addr, pNalu->size );
                 pBuf += pNalu->size;
             } else {
-                LOGE("get nalu error, pNalu->addr = %p, pNalu->size = %d\n", pNalu->addr, pNalu->size );
+                LOG_E("get nalu error, pNalu->addr = %p, pNalu->size = %d\n", pNalu->addr, pNalu->size );
             }
             break;
         default:
@@ -124,19 +124,19 @@ int RtmpSendVideo( RtmpContex *_pConext, char *_pData,
     }
 
     if ( size >= MAX_NALUS_PER_FRAME ) {
-        LOGE("nalus over flow\n");
+        LOG_E("nalus over flow\n");
     }
 
     if ( _nIsKey ) {
         ret = RtmpPubSendVideoKeyframe( _pConext->pPubCtx, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
-            LOGE("RtmpPubSendVideoKeyframe() error, ret = %d, errno = %d\n", ret, errno );
+            LOG_E("RtmpPubSendVideoKeyframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
         }
     } else {
         ret = RtmpPubSendVideoInterframe( _pConext->pPubCtx, pBufAddr, pBuf-pBufAddr, _nPresentationTime );
         if ( ret != 0 ) {
-            LOGE("RtmpPubSendVideoInterframe() error, ret = %d, errno = %d\n", ret, errno );
+            LOG_E("RtmpPubSendVideoInterframe() error, ret = %d, errno = %d\n", ret, errno );
             goto err;
         }
     }
@@ -157,19 +157,19 @@ int RtmpSendAudio( RtmpContex *_pConext, char *_pData,
 
     if ( !_pConext || !_pData || _nSize == 0 ) {
         if ( pBuf ) {
-            LOGE("check param error\n");
+            LOG_E("check param error\n");
             free( pBuf );
         }
         return -1;
     }
 
     if ( !pBuf ) {
-        LOGE("malloc error\n");
+        LOG_E("malloc error\n");
         return -1;
     }
 
     if ( !_pConext->pPubCtx ) {
-        LOGE("check pPubCtx error\n");
+        LOG_E("check pPubCtx error\n");
         return -1;
     }
 
@@ -200,14 +200,14 @@ int RtmpSendAudio( RtmpContex *_pConext, char *_pData,
             memcpy( pBuf, pAdts->addr, pAdts->size );
             pBuf += pAdts->size;
         } else {
-            LOGE("found invalid adts!!!\n");
+            LOG_E("found invalid adts!!!\n");
         }
         pAdts++;
     }
 
     ret = RtmpPubSendAudioFrame( _pConext->pPubCtx, pBufAddr, pBuf - pBufAddr, _nPresentationTime );
     if ( ret < 0 ) {
-        LOGE("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
+        LOG_E("RtmpPubSendAudioFrame() error, ret = %d\n", ret );
         goto err;
     }
 
@@ -227,7 +227,7 @@ int RtmpConnect( RtmpContex * _pConext)
 int RtmpDestroy( RtmpContex * _pConext )
 {
     if ( !_pConext ) {
-        LOGE("check param error\n");
+        LOG_E("check param error\n");
         return -1;
     }
 

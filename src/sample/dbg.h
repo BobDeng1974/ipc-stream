@@ -1,8 +1,8 @@
-// Last Update:2018-12-27 09:55:50
+// Last Update:2019-02-21 11:00:00
 /**
  * @file dbg.h
  * @brief 
- * @author liyq
+ * @author felix
  * @version 0.1.00
  * @date 2018-12-26
  */
@@ -22,18 +22,35 @@ typedef enum {
 
 enum {
     DBG_LEVEL_DEBUG,
+    DBG_LEVEL_INFO,
     DBG_LEVEL_FATAL,
 };
 
+typedef struct {
+    char *topic;
+    char *broker;
+    char *clientId;
+    char *user;
+    char *passwd;
+    int port;
+    int qos;
+} MqttParam;
 
 typedef struct {
     int output;
-    char *logFile;
-    int printTime;
-    unsigned logLevel;
-    int logVerbose;
-    FILE *fp;
-} Logger;
+    char *file;
+    int showTime;
+    unsigned level;
+    int verbose;
+    MqttParam *mqttParam;
+} LogParam;
+
+typedef struct {
+    int moduleId;
+    int (*init)( void *arg );
+    int (*deinit)();
+    int (*output)( char *log );
+} LogModule;
 
 #define NONE                 "\e[0m"
 #define BLACK                "\e[0;30m"
@@ -59,44 +76,20 @@ typedef struct {
 #define REVERSE              "\e[7m"
 #define HIDE                 "\e[8m"
 #define CLEAR                "\e[2J"
-#define CLRLINE              "\r\e[K" //or "\e[1K\r"
+#define CLRLINE              "\r\e[K"
 
-#ifdef LOG
-#undef LOG
-#endif
+#define DBG_BASIC_INFO __FILE__, __FUNCTION__, __LINE__
+#define LOGI(args...) Dbg( DBG_LEVEL_DEBUG, DBG_BASIC_INFO,  args )
+#define LOGE(args...) Dbg( DBG_LEVEL_FATAL, DBG_BASIC_INFO, args )
+#define PRINT(args...) printf("[ %s %s() +%d ] ", DBG_BASIC_INFO );printf(args)
 
-#ifdef DBG_ERROR
-#undef DBG_ERROR
-#endif
-
-#ifdef DBG_LOG
-#undef DBG_LOG
-#endif
-
-#ifdef BASIC
-#undef BASIC
-#endif
-
-#ifdef LOGE
-#undef LOGE
-#endif
-
-#ifdef LOGI
-#undef LOGI
-#endif
-
-#define LOG(args...) dbg( DBG_LEVEL_DEBUG, __FILE__, __FUNCTION__, __LINE__, args )
-#define DBG_ERROR(args...) dbg( DBG_LEVEL_FATAL, __FILE__, __FUNCTION__, __LINE__, args )
-#define DBG_LOG(args...) LOG(args)
-#define BASIC() printf("[ %s %s() +%d] ", __FILE__, __FUNCTION__, __LINE__ )
-
-#define LOGE DBG_ERROR
-#define LOGI LOG
-#define BUFFER_SIZE 1024
-
-
-extern int LoggerInit( unsigned printTime, int output, char *pLogFile, int logVerbose );
-extern int dbg( unsigned logLevel, const char *file, const char *function, int line, const char *format, ...  );
-extern int DbgGetMemUsed( char *memUsed );
+extern int LoggerInit( LogParam *param );
+extern int Dbg( unsigned logLevel,
+                const char *file,
+                const char *function,
+                int line,
+                const char *format, ...  
+                );
+extern int LogModuleRegister( LogModule *module );
 
 #endif  /*DBG_H*/

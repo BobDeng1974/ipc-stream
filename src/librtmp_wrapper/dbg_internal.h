@@ -14,7 +14,7 @@
 #define BASIC() printf("[ %s %s +%d ] ", __FILE__, __FUNCTION__, __LINE__ )
 #define LOG(args...) BASIC();printf(args)
 #define LOGI(args...) BASIC();printf(args)
-#define LOGE(args...) BASIC();printf(args)
+#define LOG_E(args...) BASIC();printf(args)
 #define VAL( v ) LOG(#v" = %d\n", v )
 #define STR( s ) LOG(#s" = %s\n", s )
 

@@ -1,4 +1,4 @@
-// Last Update:2018-12-27 11:06:40
+// Last Update:2019-02-21 11:33:43
 /**
  * @file dbg.c
  * @brief 
@@ -21,67 +21,66 @@
 #include <fcntl.h>
 #include "dbg.h"
 
+#define BUFFER_SIZE 1024
+#define DBG_PARAM_CHECK_ERROR() PRINT("param check error\n")
+#define DBG_MALLOC_ERROR( ptr ) if ( !ptr) {\
+    PRINT("malloc error\n"); \
+    return -1; \
+}
+#define MEMSET( ptr ) memset( ptr, 0, sizeof(*(ptr)) )
+#define MODULE_MAX 5
+#define ARRSZ( arr ) sizeof(arr)/sizeof(arr[0])
+
+typedef struct {
+    int output;
+    char *file;
+    int showTime;
+    unsigned level;
+    int verbose;
+    LogModule *module;
+    LogModule *modules[MODULE_MAX];
+    int index;
+} Logger;
+
 static Logger gLogger;
 
-int FileOpen( char *_pLogFile )
+int LoggerInit( LogParam *param )
 {
-    gLogger.fp = fopen( _pLogFile, "a+" );
-    if ( !gLogger.fp ) {
-        printf("open file %s error\n", _pLogFile );
-        return -1;
-    } else {
-        printf("open file %s ok\n", _pLogFile);
-    }
-
-
-    return 0;
-}
-
-int WriteLog( char *log )
-{
-    size_t ret = 0;
-
-    if ( !gLogger.fp ) {
-        printf("check fd error\n");
+    if ( !param ) {
+        DBG_PARAM_CHECK_ERROR();
         return -1;
     }
 
-    ret = fwrite( log, strlen(log), 1, gLogger.fp );
-    if ( ret != 1 ) {
-        printf("error, ret != 1\n");
-    } else {
+    gLogger.output = param->output;
+    gLogger.showTime = param->showTime;
+    gLogger.level = param->level;
+    gLogger.verbose = param->verbose;
+    if ( param->file ) {
+        int len = strlen( param->file );
+        gLogger.file = (char*)malloc( len );
+        DBG_MALLOC_ERROR( gLogger.file );
+        memcpy( gLogger.file, param->file, len );
     }
-    fflush( gLogger.fp );
+
+    int i = 0;
+    for ( i=0; i<gLogger.index; i++ ) {
+        if ( gLogger.modules[i]->moduleId == gLogger.output ) {
+            gLogger.module = gLogger.modules[i];
+        }
+    }
+
+    if ( !gLogger.module ) {
+        PRINT("get active module error\n");
+        return -1;
+    }
+
+    if ( gLogger.module->init )
+        gLogger.module->init( param );
 
     return 0;
 }
 
-int LoggerInit( unsigned printTime, int output, char *pLogFile, int logVerbose )
-{
-    memset( &gLogger, 0, sizeof(gLogger) );
-
-    gLogger.output = output;
-    gLogger.logFile = pLogFile;
-    gLogger.printTime = printTime;
-    gLogger.logVerbose = logVerbose;
-
-    switch( output ) {
-    case OUTPUT_FILE:
-        FileOpen( gLogger.logFile );
-        break;
-    case OUTPUT_SOCKET:
-        break;
-    case OUTPUT_MQTT:
-        break;
-    case OUTPUT_CONSOLE:
-    default:
-        break;
-    }
-
-    return 0;
-}
-
-int GetCurrentTime( char *now_time )
+int GetTime( char *now_time )
 {
     time_t now;
     struct tm *tm_now = NULL;
@@ -93,20 +92,21 @@ int GetCurrentTime( char *now_time )
     return(0);
 }
 
-int dbg( unsigned logLevel, const char *file, const char *function, int line, const char *format, ...  )
+int Dbg( unsigned logLevel, const char *file,
+         const char *function, int line, const char *format, ...  )
 {
     char buffer[BUFFER_SIZE] = { 0 };
     va_list arg;
     int len = 0;
-    char now[200] = { 0 };
 
-    if ( gLogger.printTime ) {
+    if ( gLogger.showTime ) {
+        char now[200] = { 0 };
         memset( now, 0, sizeof(now) );
-        GetCurrentTime( now );
+        GetTime( now );
         len = sprintf( buffer, "[ %s ] ", now );
     }
 
-    if ( gLogger.logVerbose ) {
+    if ( gLogger.verbose ) {
         len = sprintf( buffer+len, "[ %s %s +%d ] ", file, function, line );
     }
 
@@ -114,55 +114,29 @@ int dbg( unsigned logLevel, const char *file, const char *function, int line, co
     vsprintf( buffer+strlen(buffer), format, arg );
     va_end( arg );
 
-    switch( gLogger.output ) {
-    case OUTPUT_FILE:
-        WriteLog( buffer );
-        break;
-    case OUTPUT_SOCKET:
-        break;
-    case OUTPUT_MQTT:
-        break;
-    case OUTPUT_CONSOLE:
-        if ( logLevel == DBG_LEVEL_FATAL ) {
-            printf( RED"%s"NONE, buffer );
-        } else {
-            printf( GRAY"%s"NONE, buffer );
-        }
-        break;
-    default:
-        break;
+    if ( gLogger.module && gLogger.module->output ) {
+        gLogger.module->output( buffer );
     }
 
     return 0;
 
 }
 
-int DbgGetMemUsed( char *memUsed )
+int LogModuleRegister( LogModule *module )
 {
-    char line[256] = { 0 }, key[32] = { 0 }, value[32] = { 0 };
-    FILE *fp = NULL;
-    char *ret = NULL;
-
-    fp = fopen( "/proc/self/status", "r" );
-    if ( !fp ) {
-        printf("open /proc/self/status error\n" );
+    if ( !module ) {
+        DBG_PARAM_CHECK_ERROR();
         return -1;
     }
 
-    for (;;) {
-        memset( line, 0, sizeof(line) );
-        ret = fgets( line, sizeof(line), fp );
-        if (ret) {
-            sscanf( line, "%s %s", key, value );
-            if (strcmp( key, "VmRSS:" ) == 0 ) {
-                memcpy( memUsed, value, strlen(value) );
-                fclose( fp );
-                return 0;
-            }
-        }
+    if ( gLogger.index > MODULE_MAX ) {
+        PRINT("can't register module, reach max\n");
+        return -1;
     }
 
-    fclose( fp );
-    return -1;
+    gLogger.modules[gLogger.index++] = module;
+
+    return 0;
 }
+
 

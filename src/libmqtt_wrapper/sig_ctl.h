@@ -1,4 +1,4 @@
-// Last Update:2019-01-25 17:48:25
+// Last Update:2019-02-21 17:19:03
 /**
  * @file sig_ctl.h
  * @brief 
@@ -18,15 +18,12 @@ typedef struct {
     char *pTopic;
     int connected;
     Queue *q;
-    Queue *pubQ;
-    pthread_mutex_t pubMutex;
-    pthread_cond_t pubCond;
 } MqttContex;
 
 extern MqttContex * MqttNewContex( char *_pClientId, int _nQos, char *_pUserName,
                             char *_pPasswd, char *_pTopic, char *_pHost, int _nPort );
 extern void MqttDestroyContex( MqttContex *_pConext );
-extern int MqttSend( MqttContex *_pConext, char *_pMessage );
+extern int MqttSend( MqttContex *_pConext, char *_pTopic, char *_pMessage );
 extern int MqttRecv( MqttContex *_pConext, char *_pMsg, int *_pLen );
 
 #endif  /*SIG_CTL_H*/
