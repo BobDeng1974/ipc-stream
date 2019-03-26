@@ -1,4 +1,4 @@
-// Last Update:2019-02-21 19:18:07
+// Last Update:2019-03-26 16:26:53
 /**
  * @file main.c
  * @brief 
@@ -62,6 +62,8 @@ enum {
 #define ADD_SIGNAL_ITEM( item ) { #item, item },
 #define ARRSZ(arr) (sizeof(arr)/sizeof(arr[0]))
 
+#define ENABLE_MQTT 1
+
 static MqttSignal gSignalList[] = 
 {
     ITEM_LIST
@@ -78,7 +80,7 @@ static app_t app =
     .nInputAudioType = RTMP_PUB_AUDIO_AAC, 
     .nOutputAudioType = RTMP_PUB_AUDIO_AAC,
     .nTimePolic = RTMP_PUB_TIMESTAMP_ABSOLUTE,
-    .pClientId = "ipc-rtmp-mqtt-208-9",
+    .pClientId = "ipc-rtmp-mqtt-208-10",
     .nQos = 2,
     .pUserName = NULL,
     .pPasswd = NULL,
@@ -86,8 +88,8 @@ static app_t app =
     .pHost = "emqx.qnservice.com",
     .nPort = 1883,
     .pCfgPath = "/tmp/oem/app/ipc-rtmp.conf",
-    .pLogTopic = "rtmp-stream-208",
-    .pClientIdLog = "rtmp-stream-208",
+    .pLogTopic = "rtmp-stream-217",
+    .pClientIdLog = "rtmp-stream-217",
     
 };
 
@@ -136,15 +138,17 @@ int VideoFrameCallBack ( char *_pFrame,
     int ret = 0;
     static int i = 0, nIsFirst = 1;
 
-    if ( i == 5000 ) {
-        LOGI("%s called", __FUNCTION__ );
+    if ( i == 500 ) {
+        LOGI("%s called\n", __FUNCTION__ );
         i = 0;
     }
     i++;
 
+#if ENABLE_MQTT
     if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
         return 0;
     }
+#endif
 
     if ( i > 5 && !_nIskey && nIsFirst ) {
         app.cache = (char *)malloc( _nLen );
@@ -161,6 +165,7 @@ int VideoFrameCallBack ( char *_pFrame,
     if ( ret < 0 ) {
         static int j = 0;
 
+        LOGE("RtmpSendVideo error, ret = %d, reconnect", ret );
         RtmpReconnect();
         if ( j == 50 ) {
             LOGE("RtmpSendVideo error");
@@ -187,15 +192,18 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     }
     i++;
 
+#if ENABLE_MQTT
     if ( app.nStreamSts != STREAM_STATUS_RUNNING ) {
         return 0;
     }
+#endif
 
     pthread_mutex_lock( &app.mutex );
     ret = RtmpSendAudio( app.pContext, _pFrame, _nLen, (unsigned int) _dTimeStamp );
     if ( ret < 0 ) {
         static int i = 0;
 
+        LOGE("RtmpSendAudio error, errno = %d", errno );
         if ( i == 100 ) {
             LOGE("RtmpSendAudio error, errno = %d", errno );
             i = 0;
@@ -207,6 +215,7 @@ int AudioFrameCallBack( char *_pFrame, int _nLen, double _dTimeStamp,
     return 0;
 }
 
+#if ENABLE_MQTT
 void EventLoop()
 {
     char message[1000] = { 0 };
@@ -245,6 +254,7 @@ void EventLoop()
 
     } 
 }
+#endif
 
 int LoadPushUrl()
 {
@@ -274,6 +284,7 @@ int LoadPushUrl()
  * the mqtt server will close socket connection if no data coming in 30s
  * so we need to send heart beat packet to server
  * */
+#if ENABLE_MQTT
 void *HeartBeatTask( void *arg )
 {
     int ret = 0;
@@ -294,6 +305,7 @@ void *HeartBeatTask( void *arg )
     }
     return NULL;
 }
+#endif
 
 int GetMemUsed( char *memUsed )
 {
@@ -349,6 +361,7 @@ int main( int argc , char *argv[] )
     LoggerInit( &param );
     LoadPushUrl();
 
+#if ENABLE_MQTT
     /* 1.初始化mqtt信令 */
     LOGI("init mqtt");
     app.pMqttContex = MqttNewContex( app.pClientId, app.nQos, app.pUserName, app.pPasswd,
@@ -357,7 +370,9 @@ int main( int argc , char *argv[] )
         LOGE("MqttNewContex error");
         return 0;
     }
+#endif
 
+    LOGI("publishing url : %s\n", app.url );
     /* 2.初始化rtmp推流 */
     LOGI("init rtmp lib");
     pthread_mutex_init( &app.mutex, NULL );
@@ -385,15 +400,19 @@ int main( int argc , char *argv[] )
     app.pDev->init( AUDIO_AAC, 0, VideoFrameCallBack, AudioFrameCallBack );
     app.pDev->startStream( STREAM_MAIN );
 
+#if ENABLE_MQTT
     pthread_t thread;
     pthread_create( &thread, NULL, HeartBeatTask, NULL );
+#endif
 
     for (;;) {
         char memUsed[16] = { 0 };
         static int count = 0;
 
+#if ENABLE_MQTT
         /* 5.循环接收app信令，收到pushLiveStart，开始rmtp推流 */
         EventLoop();
+#endif
 
         GetMemUsed( memUsed );
         if ( count == 30 ) {
@@ -401,6 +420,9 @@ int main( int argc , char *argv[] )
             LOGI("memory used : %s", memUsed );
         }
         count++;
+#if !ENABLE_MQTT
+        sleep( 2 );
+#endif
     }
 
     return 0;
